@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M.S.L. Portal</title>
+
+    <!-- Tailwind CSS (スタイリング用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React & ReactDOM (UI構築用) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel (JSX変換用) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts -->
+    <!-- 
+        Black Ops One: メインロゴ用 (ミリタリーステンシル)
+        Quantico: サブタイトル/装飾用 (SF/OS風)
+        IBM Plex Sans JP: メイン本文/ボタン用 (可読性重視)
+    -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Quantico:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- カスタムスタイル -->
+    <style>
+        body {
+            background-color: #0f172a;
+            /* Slate-900 */
+            color: white;
+            margin: 0;
+            font-family: 'IBM Plex Sans JP', sans-serif;
+        }
+
+        /* フォント定義クラス */
+        .font-logo {
+            font-family: 'Black Ops One', system-ui;
+        }
+
+        .font-tech {
+            font-family: 'Quantico', sans-serif;
+        }
+
+        /* 背景のアニメーション（ゆっくり明滅） */
+        @keyframes pulse-bg {
+
+            0%,
+            100% {
+                opacity: 0.2;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .animate-bg {
+            animation: pulse-bg 8s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- アプリケーションのマウントポイント -->
+    <div id="root"></div>
+
+    <!-- Reactアプリケーションコード -->
+    <script type="text/babel">
+        const App = () => {
+            // 画面遷移ハンドラ（現在はアラートのみ）
+            const handleNavigate = (target) => {
+                console.log(`Navigating to: ${target}`);
+                alert(`[${target}] レイヤーへアクセスします...`);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+
+                    {/* 背景装飾: ラジアルグラデーション */}
+                    <div className="absolute inset-0 pointer-events-none animate-bg"
+                        style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)' }}>
+                    </div>
+
+                    {/* --- 1. ロゴセクション --- */}
+                    <div className="text-center mb-16 z-10">
+                        {/* メインロゴ: tracking-[0.1rem] で文字間隔をタイトに調整 */}
+                        <h1 className="text-6xl md:text-8xl font-logo mb-2 text-white opacity-90 tracking-[0.1rem]"
+                            style={{ textShadow: '0 0 30px rgba(59, 130, 246, 0.3)' }}>
+                            M.S.L.
+                        </h1>
+
+                        {/* サブタイトル */}
+                        <div className="flex flex-col items-center gap-1">
+                            <div className="h-px w-32 bg-blue-500/50 mb-2"></div>
+                            <p className="text-blue-400 text-sm md:text-base font-tech tracking-[0.3em] uppercase font-bold">
+                                Multiphase Synchronous Logic
+                            </p>
+                            <p className="text-gray-500 text-[10px] font-tech tracking-widest">
+                                SYSTEM VER. 1.0.0 // READY
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* --- 2. ナビゲーションセクション --- */}
+                    <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl z-10">
+
+                        {/* ① Public Archive ボタン */}
+                        <button
+                            onClick={() => handleNavigate('world')}
+                            className="
+                                flex-1 
+                                border border-yellow-600/30 
+                                bg-yellow-900/10
+                                p-8 rounded-lg 
+                                text-left 
+                                hover:bg-yellow-900/20 
+                                hover:border-yellow-600/80
+                                active:bg-yellow-900/40
+                                transition-all duration-300
+                                group
+                                backdrop-blur-sm
+                            "
+                        >
+                            <div className="text-yellow-600 font-tech text-xs mb-2 tracking-widest group-hover:text-yellow-400 transition-colors">
+                                LAYER: WORLD
+                            </div>
+                            <h2 className="text-2xl font-bold mb-3 text-yellow-100 group-hover:text-white group-hover:translate-x-1 transition-all">
+                                一般公開アーカイブ
+                            </h2>
+                            <p className="text-gray-400 text-xs md:text-sm leading-relaxed group-hover:text-yellow-200/80 font-medium">
+                                魔法史、魔素物理学、社会情勢に関する<br />
+                                一般市民向け資料データベース。
+                            </p>
+                        </button>
+
+                        {/* ② Authorized Access ボタン */}
+                        <button
+                            onClick={() => handleNavigate('dev')}
+                            className="
+                                flex-1 
+                                border border-blue-600/30 
+                                bg-blue-900/10
+                                p-8 rounded-lg 
+                                text-left 
+                                hover:bg-blue-900/20 
+                                hover:border-blue-500/80
+                                active:bg-blue-900/40
+                                transition-all duration-300
+                                group
+                                backdrop-blur-sm
+                            "
+                        >
+                            <div className="text-blue-600 font-tech text-xs mb-2 tracking-widest group-hover:text-blue-400 transition-colors">
+                                LAYER: DEV
+                            </div>
+                            <h2 className="text-2xl font-bold mb-3 text-blue-100 group-hover:text-white group-hover:translate-x-1 transition-all">
+                                有資格者エリア
+                            </h2>
+                            <p className="text-gray-400 text-xs md:text-sm leading-relaxed group-hover:text-blue-200/80 font-medium">
+                                M.S.L.仕様書、APIリファレンス、<br />
+                                カートリッジ安全運用規定。
+                            </p>
+                        </button>
+
+                    </div>
+
+                    {/* --- 3. フッター --- */}
+                    <footer className="fixed bottom-4 text-gray-600 text-[10px] font-tech tracking-wider flex gap-4 z-10">
+                        <span>© 2025 Magic Development Bureau</span>
+                        <span className="text-gray-700">::</span>
+                        <span>SECURE CONNECTION ESTABLISHED</span>
+                    </footer>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
