@@ -59,14 +59,13 @@
             animation: pulse-bg 8s ease-in-out infinite;
         }
 
-        /* --- 起動シーケンスアニメーション --- */
+        /* --- 起動シーケンスアニメーション (通常版) --- */
 
         /* 1. ロゴ: 中央に出現 → 待機 → 上へ移動 */
         @keyframes logoSequence {
             0% {
                 opacity: 0;
                 transform: translateY(20px) scale(1.1);
-                /* 最初は少し下＆拡大 */
             }
 
             20% {
@@ -75,53 +74,58 @@
                 /* 中央付近で停止 */
             }
 
-            65% {
-                /* 待機時間を延長して重厚感を出す */
+            60% {
                 transform: translateY(15vh) scale(1.1);
+                /* 待機 */
             }
 
             100% {
                 opacity: 1;
                 transform: translateY(0) scale(1);
-                /* 定位置へ移動＆サイズ戻し */
+                /* 定位置へ移動 */
             }
         }
 
         .anim-logo-wrapper {
-            /* 4.5秒かけてゆっくり一連の動作を行う */
-            animation: logoSequence 4.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            /* 4.5s -> 2.5s に短縮 */
+            animation: logoSequence 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* 2. コンテンツ: ロゴ移動後にフェードイン + クリック有効化 */
+        /* 2. コンテンツ: ロゴ移動後にフェードイン */
         @keyframes contentFadeIn {
             from {
                 opacity: 0;
                 transform: translateY(15px);
                 pointer-events: none;
-                /* ★重要: 出現前はクリック不可 */
             }
 
             to {
                 opacity: 1;
                 transform: translateY(0);
                 pointer-events: auto;
-                /* ★重要: 出現完了後にクリック可能にする */
             }
         }
 
         .anim-content-wrapper {
             opacity: 0;
             pointer-events: none;
-            /* 初期状態でもクリック不可 */
-            /* 開始タイミング: 4.0s (ロゴ移動完了に合わせて) */
-            animation: contentFadeIn 1.2s ease-out 4.0s forwards;
+            /* 開始タイミング: 4.0s -> 2.2s に短縮 */
+            animation: contentFadeIn 0.8s ease-out 2.2s forwards;
         }
 
-        /* 3. フッター: 最後にひっそりと表示 */
+        /* 3. フッター */
         .anim-footer {
             opacity: 0;
-            /* 開始タイミング: 5.0s */
-            animation: contentFadeIn 1.2s ease-out 5.0s forwards;
+            /* 開始タイミング: 5.0s -> 2.8s に短縮 */
+            animation: contentFadeIn 0.8s ease-out 2.8s forwards;
+        }
+
+        /* --- スキップ用スタイル (即時表示) --- */
+        .skip-animation {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            animation: none !important;
+            pointer-events: auto !important;
         }
     </style>
 </head>
@@ -130,20 +134,38 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        const { useState, useEffect } = React;
+
         const App = () => {
+            const [isVisited, setIsVisited] = useState(false);
+
+            // 初回ロード時に訪問済みかチェック
+            useEffect(() => {
+                const visited = sessionStorage.getItem('msl_portal_visited');
+                if (visited) {
+                    setIsVisited(true);
+                } else {
+                    // 初回訪問ならフラグを立てる
+                    sessionStorage.setItem('msl_portal_visited', 'true');
+                }
+            }, []);
+
             // 画面遷移ハンドラ
             const handleNavigate = (target) => {
                 if (target === 'world') {
-                    // 一般公開アーカイブへ遷移 (msl-project/public/index.html)
                     window.location.href = './public/index.html';
                 } else if (target === 'dev') {
-                    // 有資格者エリアへ遷移 (msl-project/dev/index.html)
-                    // ※ディレクトリが存在しない場合は404になります
                     window.location.href = './dev/index.html';
                 } else {
                     console.log(`Navigating to: ${target}`);
                 }
             };
+
+            // アニメーション用クラスの決定
+            // 訪問済みなら 'skip-animation' を付与してアニメーションを無効化
+            const logoClass = isVisited ? 'skip-animation' : 'anim-logo-wrapper';
+            const contentClass = isVisited ? 'skip-animation' : 'anim-content-wrapper';
+            const footerClass = isVisited ? 'skip-animation' : 'anim-footer';
 
             return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-4 relative">
@@ -153,15 +175,13 @@
                         style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)' }}>
                     </div>
 
-                    {/* --- 1. ロゴセクション (アニメーション適用) --- */}
-                    <div className="text-center mb-16 z-10 anim-logo-wrapper">
-                        {/* メインロゴ: tracking-[0.1rem] で文字間隔を均一に狭く設定 */}
+                    {/* --- 1. ロゴセクション --- */}
+                    <div className={`text-center mb-16 z-10 ${logoClass}`}>
                         <h1 className="text-6xl md:text-8xl font-logo mb-2 text-white opacity-90 tracking-[0.1rem]"
                             style={{ textShadow: '0 0 30px rgba(59, 130, 246, 0.3)' }}>
                             M.S.L.
                         </h1>
 
-                        {/* サブタイトル */}
                         <div className="flex flex-col items-center gap-1">
                             <div className="h-px w-32 bg-blue-500/50 mb-2"></div>
                             <p className="text-blue-400 text-sm md:text-base font-tech tracking-[0.3em] uppercase font-bold">
@@ -173,8 +193,8 @@
                         </div>
                     </div>
 
-                    {/* --- 2. ナビゲーションセクション (遅延表示) --- */}
-                    <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl z-10 anim-content-wrapper">
+                    {/* --- 2. ナビゲーションセクション --- */}
+                    <div className={`flex flex-col md:flex-row gap-6 w-full max-w-4xl z-10 ${contentClass}`}>
 
                         {/* ① Public Archive ボタン */}
                         <button
@@ -196,7 +216,6 @@
                             <div className="text-yellow-600 font-tech text-xs mb-2 tracking-widest group-hover:text-yellow-400 transition-colors">
                                 LAYER: WORLD
                             </div>
-                            {/* フォント統一 (IBM Plex Sans JP) */}
                             <h2 className="text-2xl font-bold mb-3 text-yellow-100 group-hover:text-white group-hover:translate-x-1 transition-all">
                                 一般公開アーカイブ
                             </h2>
@@ -226,7 +245,6 @@
                             <div className="text-blue-600 font-tech text-xs mb-2 tracking-widest group-hover:text-blue-400 transition-colors">
                                 LAYER: DEV
                             </div>
-                            {/* フォント統一 (IBM Plex Sans JP) */}
                             <h2 className="text-2xl font-bold mb-3 text-blue-100 group-hover:text-white group-hover:translate-x-1 transition-all">
                                 有資格者エリア
                             </h2>
@@ -238,8 +256,8 @@
 
                     </div>
 
-                    {/* --- 3. フッター (最後に表示) --- */}
-                    <footer className="fixed bottom-4 text-gray-600 text-[10px] font-tech tracking-wider flex gap-4 z-10 anim-footer">
+                    {/* --- 3. フッター --- */}
+                    <footer className={`fixed bottom-4 text-gray-600 text-[10px] font-tech tracking-wider flex gap-4 z-10 ${footerClass}`}>
                         <span>© 2025 Magic Development Bureau</span>
                         <span className="text-gray-700">::</span>
                         <span>SECURE CONNECTION ESTABLISHED</span>

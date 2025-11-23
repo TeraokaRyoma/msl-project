@@ -16,9 +16,9 @@
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Fonts: 明朝体 (Shippori Mincho) と 装飾用 (Cinzel) -->
+    <!-- Fonts -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Shippori+Mincho:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Shippori+Mincho:wght@400;500;700&family=IBM+Plex+Sans+JP:wght@400;700&display=swap"
         rel="stylesheet">
     <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -28,7 +28,6 @@
             background-color: #0f172a;
             color: #e2e8f0;
             font-family: 'Shippori Mincho', serif;
-            /* 全体を明朝体に */
             margin: 0;
             overflow: hidden;
         }
@@ -37,7 +36,10 @@
             font-family: 'Cinzel', serif;
         }
 
-        /* スクロールバーのカスタマイズ (羊皮紙風) */
+        .font-sans-jp {
+            font-family: 'IBM Plex Sans JP', sans-serif;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -55,7 +57,6 @@
             background: #94a3b8;
         }
 
-        /* アニメーション: ページ切り替え時のフェード */
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -69,17 +70,20 @@
         }
 
         .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
+            animation: fadeIn 0.6s ease-out forwards;
         }
 
-        /* 装飾: 金色の輝き */
         .text-gold {
             color: #fbbf24;
             text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
         }
 
-        .border-gold {
-            border-color: rgba(251, 191, 36, 0.3);
+        /* メタ情報エリア用のスタイル */
+        .meta-card {
+            background: rgba(30, 41, 59, 0.4);
+            border-left: 4px solid #3b82f6;
+            /* Blue accent for meta */
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
@@ -92,40 +96,209 @@
 
         // ========================================================================
         //  コンテンツ定義エリア
-        //  ※ 編集頻度が高い部分はここに集約しています。
-        //  ※ 将来的にはこれらを別ファイル (History.js, Physics.js...) に分割可能です。
         // ========================================================================
 
         // --- 1. Introduction (序文) ---
         const PageIntroduction = () => (
-            <div className="space-y-8 animate-fade-in max-w-3xl mx-auto">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-widest text-gold">論理が紡ぐ、奇跡の系譜</h1>
-                    <p className="text-gray-400 text-sm font-cinzel tracking-widest">THE GENEALOGY OF MIRACLES WEAVED BY LOGIC</p>
+            <div className="space-y-16 animate-fade-in max-w-4xl mx-auto pb-12">
+
+                {/* Header Section */}
+                <div className="text-center mb-12 relative">
+                    <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent -z-10"></div>
+                    <span className="bg-gray-900 px-6 text-gold font-cinzel tracking-[0.3em] text-sm">M.S.L. PUBLIC ARCHIVE</span>
+
+                    {/* キャッチコピー */}
+                    <h1 className="text-4xl md:text-6xl font-bold mt-8 mb-4 tracking-widest text-white drop-shadow-lg leading-tight">
+                        魔法を論理で記述せよ。
+                    </h1>
+
+                    <p className="text-gray-500 text-xs md:text-sm font-cinzel tracking-widest mt-8">
+                        DESCRIBE THE MAGIC WITH LOGIC.
+                    </p>
                 </div>
 
-                <div className="bg-[#1e293b]/50 p-8 rounded-lg border border-gold shadow-lg leading-loose text-lg">
-                    <p className="mb-6">
-                        かつて「神秘」として崇められ、あるいは「異能」として恐れられた力。<br />
-                        それは今、論理によって記述され、システムによって制御される確かな「技術」へと昇華しました。
-                    </p>
-                    <p className="mb-6">
-                        我々魔導局は、魔法技術（M.S.L.）の正しい知識と歴史を広く市民に公開し、
-                        より安全で豊かな魔法社会の実現を目指しています。
-                    </p>
-                    <p>
-                        本アーカイブは、現代魔法の基礎となる魔素物理学、その歴史的変遷、
-                        そして現代社会における役割について体系的にまとめたものです。
-                    </p>
+                {/* World View Section (作中視点) */}
+                <div className="max-w-3xl mx-auto">
+                    <div className="bg-[#1e293b]/80 p-8 md:p-12 rounded-sm border-t border-b border-gold shadow-2xl relative">
+                        {/* 装飾的な四隅 */}
+                        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-gold"></div>
+                        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-gold"></div>
+                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-gold"></div>
+                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-gold"></div>
+
+                        {/* 本文 */}
+                        <div className="text-lg leading-loose text-gray-200 space-y-6">
+                            <p>
+                                かつて、魔法とは選ばれし者のみが許された「神秘」であり、人々が畏怖する「異能」であった。<br />
+                                しかし、未知の素粒子<strong>「マノン (Manon)」</strong>の発見は、再現困難だったその「神秘」を、
+                                誰もが再現可能な<strong>「科学」</strong>へと変貌させた。<br />
+                                メカニズムの解明により、魔法は万人が行使し得る確かな<strong>「技術」</strong>として記述され、再定義されたのである。
+                            </p>
+                            <p>
+                                その中核を成すのが、<strong>マノン物理干渉理論(Manon Structural Logic)</strong>――通称<strong>「M.S.L.」</strong>である。<br />
+                                マノンを用いて物理世界の「構造 (Structure)」を記述し、世界への物理干渉を制御するこの論理体系は、
+                                曖昧だった事象を明確な「術式」として定義し、誰しもが望む結果を世界に描くことを可能にした。
+                            </p>
+                            <p>
+                                今や魔法は、都市を照らす光となり、空を駆ける翼となり、
+                                我々の文明を根底から支える<strong>社会基盤（インフラ）</strong>として脈打っている。<br />
+                                神秘は論理となり、奇跡は日常となった。<br />
+                                これは、そんな魔法と科学が融合した世界の概要である。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Project Overview Section (メタ視点) */}
+                <div className="mt-16 font-sans-jp">
+                    <div className="flex items-center mb-6">
+                        <span className="w-8 h-1 bg-blue-500 mr-4 rounded-full"></span>
+                        <h2 className="text-2xl font-bold text-blue-400 tracking-wider">PROJECT OVERVIEW</h2>
+                    </div>
+
+                    <div className="meta-card p-8 rounded-r-lg rounded-bl-lg shadow-lg">
+                        <div className="flex flex-col md:flex-row gap-8">
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                    <i className="fas fa-code text-blue-500"></i>
+                                    「魔法」を「実装」する試み
+                                </h3>
+                                <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                                    本プロジェクト「M.S.L. Project」は、ファンタジー作品における魔法を、
+                                    プログラミング言語のような論理的体系として再定義し、
+                                    誰もが自由に魔法を設計・開発・実行できる環境を構築する創作プロジェクトです。
+                                </p>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    物理法則に基づいた変数（対象・作用・指向）を組み合わせることで、
+                                    従来の「属性」に縛られない自由な魔法現象をコーディングすることが可能です。
+                                </p>
+                            </div>
+
+                            <div className="flex-1 space-y-4">
+                                <div className="bg-gray-900/50 p-4 rounded border border-gray-700">
+                                    <div className="text-xs text-blue-400 font-bold mb-1">PHASE 1</div>
+                                    <div className="text-white font-bold">Document Portal</div>
+                                    <div className="text-xs text-gray-500 mt-1">現在閲覧中のサイト。世界観と仕様の公開。</div>
+                                </div>
+                                <div className="bg-gray-900/50 p-4 rounded border border-gray-700 opacity-70">
+                                    <div className="text-xs text-gray-500 font-bold mb-1">PHASE 2</div>
+                                    <div className="text-gray-300 font-bold">M-Studio (Web Editor)</div>
+                                    <div className="text-xs text-gray-500 mt-1">ブラウザ上でMSLを実行・テストする環境。</div>
+                                </div>
+                                <div className="bg-gray-900/50 p-4 rounded border border-gray-700 opacity-50">
+                                    <div className="text-xs text-gray-500 font-bold mb-1">PHASE 3</div>
+                                    <div className="text-gray-400 font-bold">Community Library</div>
+                                    <div className="text-xs text-gray-500 mt-1">ユーザー作成魔法の共有プラットフォーム。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        );
+
+        // --- 2. World (世界観) ---
+        const PageWorld = () => (
+            <div className="space-y-12 animate-fade-in">
+                <h2 className="text-3xl font-bold border-b border-gray-700 pb-4 mb-8 flex items-center">
+                    <span className="text-gold mr-4 text-2xl font-cinzel">02.</span>
+                    世界観設定
+                </h2>
+
+                {/* 世界地図エリア */}
+                <div className="bg-[#020617] rounded-lg overflow-hidden border border-gray-700 shadow-xl relative group">
+                    <div className="aspect-video w-full bg-[#0f172a] relative">
+                        {/* 画像表示: images/world_map.png を参照 */}
+                        <img
+                            src="./images/world_map.png"
+                            alt="World Map of M.S.L."
+                            className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity duration-500"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextElementSibling.style.display = 'flex';
+                            }}
+                        />
+                        {/* フォールバック用プレースホルダー */}
+                        <div className="absolute inset-0 hidden flex-col items-center justify-center bg-[#0f172a]">
+                            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                            <div className="text-center z-10">
+                                <i className="fas fa-map text-6xl text-gray-600 mb-4"></i>
+                                <p className="text-gray-400 font-cinzel tracking-widest">WORLD MAP ARCHIVE</p>
+                                <p className="text-xs text-gray-600 mt-2">Image Not Found: ./images/world_map.png</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-4 bg-[#1e293b] border-t border-gray-700 text-xs text-gray-400 flex justify-between items-center">
+                        <span>Sector: Northern Hemisphere</span>
+                        <span className="font-mono">Scale: 1:5,000,000</span>
+                    </div>
+                </div>
+
+                {/* 国家・地域解説 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* アズライト */}
+                    <div className="bg-[#1e293b]/50 p-6 rounded border-l-4 border-blue-500">
+                        <div className="flex items-center mb-4">
+                            <div className="text-4xl text-blue-500 mr-4"><i className="fas fa-chess-rook"></i></div>
+                            <div>
+                                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">The United Kingdom of</div>
+                                <h3 className="text-2xl font-bold text-white">アズライト</h3>
+                            </div>
+                        </div>
+                        <p className="text-sm text-gray-300 leading-relaxed">
+                            大陸北西部に位置する、広大な平野と豊かな水源を持つ魔法大国。<br />
+                            古くから高い魔力資質を持つ住民が多く、<strong>マノンそのものを操作して放つ魔法の研究が進められてきた。</strong><br />
+                            M.S.L.の国際標準規格である「アズライト式」の発祥地であり、現在は世界の魔法技術を牽引するリーダー的存在。
+                        </p>
+                    </div>
+
+                    {/* グラート */}
+                    <div className="bg-[#1e293b]/50 p-6 rounded border-l-4 border-red-500">
+                        <div className="flex items-center mb-4">
+                            <div className="text-4xl text-red-500 mr-4"><i className="fas fa-shield-halved"></i></div>
+                            <div>
+                                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">The Empire of</div>
+                                <h3 className="text-2xl font-bold text-white">グラート</h3>
+                            </div>
+                        </div>
+                        <p className="text-sm text-gray-300 leading-relaxed">
+                            アズライトとは巨大な山脈で隔てられた、南東部の山岳国家。<br />
+                            <strong>マノンを用いて様々な物質を生成・操作する技術を独自に発展させた。</strong><br />
+                            その応用として、近接戦闘技術と、魔力を物理的に増幅する「カートリッジシステム」を確立。<br />
+                            質実剛健な「グラート式」の発祥地。
+                        </p>
+                    </div>
+                </div>
+
+                {/* 組織解説 (A.E.G.I.S.) */}
+                <div className="bg-[#0f172a] p-8 rounded border border-gold/30 relative overflow-hidden mt-8">
+                    <div className="absolute -right-10 -top-10 text-9xl text-gold opacity-5"><i className="fas fa-scale-balanced"></i></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-4">
+                            <h3 className="text-2xl font-bold text-gold font-cinzel tracking-widest">A.E.G.I.S.</h3>
+                            <span className="text-xs text-gray-500 border border-gray-700 px-2 py-1 rounded">魔導技術倫理統制局</span>
+                        </div>
+
+                        <p className="text-sm text-gray-300 leading-loose mb-4">
+                            国家権力から独立し、M.S.L.の管理と魔導師の育成を担う中立機関。<br />
+                            その起源は、中世の魔法迫害時代に知識を守り抜いた地下研究組織にある。
+                        </p>
+                        <p className="text-sm text-gray-300 leading-loose">
+                            「魔法が社会に受容され、二度と迫害の歴史を繰り返さないこと」を理念に掲げ、
+                            魔法を用いた犯罪の取り締まりや、世界各地からの素質者スカウト、教育施設の運営を行っている。<br />
+                            各国政府とは協力関係にあるが、あくまで独立した組織であり、時には国益と対立してでも魔法の倫理を守り抜く「番人」としての側面を持つ。
+                        </p>
+                    </div>
                 </div>
             </div>
         );
 
-        // --- 2. History (魔法史) ---
+        // --- 3. History (魔法史) ---
         const PageHistory = () => (
             <div className="space-y-8 animate-fade-in">
                 <h2 className="text-3xl font-bold border-b border-gray-700 pb-4 mb-8 flex items-center">
-                    <span className="text-gold mr-4 text-2xl font-cinzel">01.</span>
+                    <span className="text-gold mr-4 text-2xl font-cinzel">03.</span>
                     魔法史概論
                 </h2>
 
@@ -137,8 +310,8 @@
                         <div className="bg-[#1e293b] p-6 rounded border border-gray-700/50">
                             <h4 className="text-gold font-bold mb-2">呪術と儀式の時代</h4>
                             <p className="text-gray-400 text-sm leading-relaxed">
-                                科学的知識が乏しかった時代、人々は経験則として「特定の音や動作」が超常現象を引き起こすことを知っていました。<br />
-                                雨乞いや祈祷といった儀式は、非効率ながらもリンカーコアへの物理刺激として機能しており、これが魔法の原点となりました。
+                                科学的知見が乏しかった時代、人々は経験則として「特定の音や動作」が超常現象を引き起こすことを知っていた。<br />
+                                雨乞いや祈祷といった儀式は、非効率ながらも術者の<strong>マノン核</strong>への物理刺激として機能しており、これが魔法の原点となった。
                             </p>
                         </div>
                     </div>
@@ -148,10 +321,10 @@
                         <div className="absolute -left-[41px] top-0 bg-gray-900 border-2 border-blue-500 w-6 h-6 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                         <h3 className="text-xl font-bold text-blue-200 mb-2">中世（ルネサンス期） <span className="text-sm font-normal text-gray-500 ml-2">- Age of Discovery -</span></h3>
                         <div className="bg-[#1e293b] p-6 rounded border border-blue-900/50">
-                            <h4 className="text-blue-400 font-bold mb-2">魔素の発見と「魔法科学」の夜明け</h4>
+                            <h4 className="text-blue-400 font-bold mb-2">マノンの発見と「魔法科学」の夜明け</h4>
                             <p className="text-gray-400 text-sm leading-relaxed">
-                                物理学と化学の発展に伴い、大気中の未知の素粒子「魔素（Mana）」が発見されました。<br />
-                                これにより、これまで神秘とされていた現象が「魔素を用いた物理干渉」であることが証明され、魔法は学問としての道を歩み始めます。
+                                物理学と化学の発展に伴い、大気中の未知の素粒子「マノン（Manon）」が発見された。<br />
+                                これにより、これまで神秘とされていた現象が「マノンを用いた物理干渉」であることが証明され、魔法は学問としての道を歩み始めたのである。
                             </p>
                         </div>
                     </div>
@@ -160,80 +333,183 @@
                     <div className="relative">
                         <div className="absolute -left-[41px] top-0 bg-gray-900 border-2 border-yellow-500 w-6 h-6 rounded-full"></div>
                         <h3 className="text-xl font-bold text-yellow-100 mb-2">近代 <span className="text-sm font-normal text-gray-500 ml-2">- Age of System -</span></h3>
-                        <div className="bg-[#1e293b] p-6 rounded border border-gray-700/50">
-                            <h4 className="text-gold font-bold mb-2">M.S.L.の策定</h4>
-                            <p className="text-gray-400 text-sm leading-relaxed">
-                                リンカーコアの生理機能が解明され、誰でも効率的に魔法を行使するための統一規格「M.S.L.」が策定されました。<br />
-                                デバイスの開発も進み、魔法は一部の才能ある者だけのものではなく、万人の技術となりました。
+                        <div className="bg-[#1e293b] p-6 rounded border border-gray-700/50 space-y-4">
+                            <div>
+                                <h4 className="text-gold font-bold mb-2">M.S.L.の策定と産業革命</h4>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    <strong>マノン核</strong>の生理機能が解明され、誰でも効率的に魔法を行使するための統一規格「M.S.L.」が策定された。<br />
+                                    また、かつて「呪われた山」として忌避されていた場所から産出される<strong>マノン鉱石</strong>が、
+                                    実は高エネルギー結晶体であることが判明。これを動力源とした「魔導産業革命」が勃興した。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 現代 */}
+                    <div className="relative">
+                        <div className="absolute -left-[41px] top-0 bg-gray-900 border-2 border-purple-500 w-6 h-6 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+                        <h3 className="text-xl font-bold text-purple-200 mb-2">現代 <span className="text-sm font-normal text-gray-500 ml-2">- Age of Expansion -</span></h3>
+                        <div className="bg-[#1e293b] p-6 rounded border border-purple-900/50">
+                            <h4 className="text-purple-400 font-bold mb-2">二大技術体系の確立</h4>
+                            <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                                巨大な山脈によって隔てられた二つの地域、<strong>「アズライト」</strong>と<strong>「グラート」</strong>では、
+                                地理的環境と住民の魔力資質の差により、異なる魔法進化を遂げた。
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-gray-800/50 p-4 rounded border border-blue-500/30">
+                                    <div className="text-blue-300 font-bold text-sm mb-1">アズライト式</div>
+                                    <p className="text-xs text-gray-400">
+                                        豊かな魔力資質を持つ平野部発祥。<br />
+                                        潤沢な魔力を放出し、遠距離から精密射撃を行うスタイル。標準規格として広く普及した。
+                                    </p>
+                                </div>
+                                <div className="bg-gray-800/50 p-4 rounded border border-red-500/30">
+                                    <div className="text-red-300 font-bold text-sm mb-1">グラート式</div>
+                                    <p className="text-xs text-gray-400">
+                                        魔力の乏しい山岳部発祥。<br />
+                                        少ない魔力を武器に纏わせて戦う近接スタイル。瞬間火力を補う<strong>カートリッジシステム</strong>を発明した。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- 4. Engineering (魔法物理工学) ---
+        const PagePhysics = () => (
+            <div className="space-y-12 animate-fade-in">
+                <h2 className="text-3xl font-bold border-b border-gray-700 pb-4 mb-8 flex items-center">
+                    <span className="text-gold mr-4 text-2xl font-cinzel">04.</span>
+                    魔法物理工学
+                </h2>
+
+                <div className="max-w-4xl mx-auto">
+                    <p className="text-lg leading-loose text-gray-300 mb-8">
+                        魔法物理工学（Magic Physics Engineering）、通称<strong>「魔法工学」</strong>。<br />
+                        それは、マノン粒子という未知の変数を物理法則に組み込み、工学的に制御・応用するための学問体系である。<br />
+                        現代における魔法工学は、主に以下の4つの分野によって構成されている。
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* ① 基礎研究 */}
+                        <div className="bg-[#1e293b] p-6 rounded border-t-4 border-blue-500 shadow-lg">
+                            <div className="text-blue-400 font-cinzel text-xs tracking-widest mb-2">FIELD 01</div>
+                            <h3 className="text-xl font-bold text-white mb-3">マノン基礎研究</h3>
+                            <p className="text-sm text-gray-400 leading-relaxed">
+                                マノン粒子そのものの性質を解明する分野。<br />
+                                この研究によってマノンの新たな振る舞いが発見されると、それは即ちM.S.L.における<strong>「新たな標準関数（Standard Library）」</strong>の追加を意味する。<br />
+                                未だ解明されていないマノンの性質は多く、日夜研究が進められている。
+                            </p>
+                        </div>
+
+                        {/* ② 開発研究 */}
+                        <div className="bg-[#1e293b] p-6 rounded border-t-4 border-green-500 shadow-lg">
+                            <div className="text-green-400 font-cinzel text-xs tracking-widest mb-2">FIELD 02</div>
+                            <h3 className="text-xl font-bold text-white mb-3">術式開発</h3>
+                            <p className="text-sm text-gray-400 leading-relaxed">
+                                基礎研究によって定義された標準関数を組み合わせ、特定の現象を引き起こす<strong>「新しい魔法」</strong>を構築する分野。<br />
+                                官民問わず最も盛んに行われており、多くの魔導師（ユーザー）がこの領域で独自の術式開発を競い合っている。
+                            </p>
+                        </div>
+
+                        {/* ③ 実用研究 */}
+                        <div className="bg-[#1e293b] p-6 rounded border-t-4 border-yellow-500 shadow-lg">
+                            <div className="text-yellow-400 font-cinzel text-xs tracking-widest mb-2">FIELD 03</div>
+                            <h3 className="text-xl font-bold text-white mb-3">社会実装・インフラ</h3>
+                            <p className="text-sm text-gray-400 leading-relaxed">
+                                マノンエネルギーを都市機能や産業動力として利用するための研究。<br />
+                                魔導ジェネレーターによる電力供給や、交通網の整備など、現代社会の根幹を支える巨大システムを扱う。
+                            </p>
+                        </div>
+
+                        {/* ④ 技術研究 */}
+                        <div className="bg-[#1e293b] p-6 rounded border-t-4 border-red-500 shadow-lg">
+                            <div className="text-red-400 font-cinzel text-xs tracking-widest mb-2">FIELD 04</div>
+                            <h3 className="text-xl font-bold text-white mb-3">魔導機器工学</h3>
+                            <p className="text-sm text-gray-400 leading-relaxed">
+                                魔法を行使するためのハードウェアに関する研究。<br />
+                                <strong>デバイス</strong>の演算コア設計や、<strong>カートリッジシステム</strong>の排熱効率化など、物理と魔導の接点となる精密技術分野である。
                             </p>
                         </div>
                     </div>
                 </div>
+
+                {/* 補足: 発動システム解説 */}
+                <div className="mt-12 bg-[#0f172a] p-8 rounded border border-gray-600 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 opacity-5 text-9xl text-white font-cinzel pointer-events-none transform translate-x-1/4 -translate-y-1/4">SYSTEM</div>
+
+                    <h3 className="text-2xl font-bold text-white mb-8 flex items-center">
+                        <span className="w-2 h-8 bg-green-500 rounded mr-4"></span>
+                        魔法発動システム
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        {/* 仮想魔法陣 */}
+                        <div>
+                            <h4 className="text-lg font-bold text-blue-300 mb-4 border-b border-blue-500/30 pb-2">
+                                <i className="fas fa-circle-nodes mr-2"></i>仮想魔法陣の構築
+                            </h4>
+                            <p className="text-sm text-gray-400 leading-relaxed mb-4">
+                                現代の魔法において、地面に図形を描く必要はない。<br />
+                                デバイスの演算コアが、M.S.L.コードに基づいて瞬時に<strong>「仮想魔法陣」</strong>を内部メモリ上に構築する。<br />
+                                術者はこの仮想回路に自身のマノン（魔力）を流し込むだけで、物理現象を励起させることができる。
+                            </p>
+                            <div className="bg-gray-800 p-3 rounded text-xs text-gray-500 font-mono">
+                                1. Code Analysis &gt; 2. Construct Virtual Circuit &gt; 3. Inject Manon &gt; Fire
+                            </div>
+                        </div>
+
+                        {/* 発動スタイル */}
+                        <div>
+                            <h4 className="text-lg font-bold text-red-300 mb-4 border-b border-red-500/30 pb-2">
+                                <i className="fas fa-fingerprint mr-2"></i>発動スタイル (Casting Style)
+                            </h4>
+                            <p className="text-sm text-gray-400 leading-relaxed mb-4">
+                                仮想回路への魔力注入トリガーは、術者の技量や戦況に応じて使い分けられる。
+                            </p>
+                            <ul className="space-y-3">
+                                <li className="flex items-start gap-3">
+                                    <span className="bg-gray-800 text-gray-300 px-2 py-1 rounded text-xs font-bold w-16 text-center shrink-0">Silent</span>
+                                    <div className="text-xs text-gray-400">
+                                        <strong className="text-gray-200 block">思考発動</strong>
+                                        脳波コントロールのみで発動。最速だが、高い集中力とデバイス相性が必要。熟練者向け。
+                                    </div>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="bg-gray-800 text-gray-300 px-2 py-1 rounded text-xs font-bold w-16 text-center shrink-0">Vocal</span>
+                                    <div className="text-xs text-gray-400">
+                                        <strong className="text-gray-200 block">音声発動</strong>
+                                        魔法名を口にする。脳内イメージを音声で補強するため安定性が高い。
+                                    </div>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="bg-gray-800 text-gray-300 px-2 py-1 rounded text-xs font-bold w-16 text-center shrink-0">Trigger</span>
+                                    <div className="text-xs text-gray-400">
+                                        <strong className="text-gray-200 block">物理発動 (Drive)</strong>
+                                        発動寸前で魔力を循環・待機させ、物理的なトリガー操作で解放する。ウェポン型デバイスで多用される。
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
 
-        // --- 3. Physics (魔素物理学) ---
-        const PagePhysics = () => (
-            <div className="space-y-8 animate-fade-in">
-                <h2 className="text-3xl font-bold border-b border-gray-700 pb-4 mb-8 flex items-center">
-                    <span className="text-gold mr-4 text-2xl font-cinzel">02.</span>
-                    魔素物理学
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-[#1e293b] p-6 rounded border border-gray-700">
-                        <h3 className="text-xl font-bold text-blue-300 mb-4"><i className="fas fa-atom mr-2"></i>魔素 (Mana)</h3>
-                        <p className="text-sm text-gray-400 leading-relaxed">
-                            大気中に約0.05%の濃度で存在する、質量をほぼ持たない特殊な素粒子。<br />
-                            特定の刺激（魔力波形）に反応して周囲の物質を引き寄せたり、自らを崩壊させてエネルギーを生み出す性質を持ちます。
-                        </p>
-                    </div>
-                    <div className="bg-[#1e293b] p-6 rounded border border-gray-700">
-                        <h3 className="text-xl font-bold text-red-300 mb-4"><i className="fas fa-heartbeat mr-2"></i>リンカーコア</h3>
-                        <p className="text-sm text-gray-400 leading-relaxed">
-                            生物の体内に存在する魔素生成疑似器官。<br />
-                            食事などで得た代謝エネルギーを「魔素」に変換し、高密度に圧縮して貯蓄します。これを「魔力」と呼びます。
-                        </p>
-                    </div>
-                </div>
-
-                <div className="mt-8 bg-[#0f172a] p-8 rounded border border-gray-600 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 opacity-10 text-9xl text-white font-cinzel pointer-events-none">III</div>
-                    <h3 className="text-xl font-bold text-white mb-6">魔法発動の3層構造理論</h3>
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center text-sm">
-                        <div className="flex-1 bg-gray-800 p-4 rounded w-full">
-                            <div className="text-purple-400 font-bold mb-1">1. MSL (Code)</div>
-                            <div className="text-xs text-gray-500">論理記述</div>
-                        </div>
-                        <i className="fas fa-arrow-right text-gray-600 rotate-90 md:rotate-0"></i>
-                        <div className="flex-1 bg-gray-800 p-4 rounded w-full">
-                            <div className="text-blue-400 font-bold mb-1">2. AST (Logic)</div>
-                            <div className="text-xs text-gray-500">術式構築</div>
-                        </div>
-                        <i className="fas fa-arrow-right text-gray-600 rotate-90 md:rotate-0"></i>
-                        <div className="flex-1 bg-gray-800 p-4 rounded w-full">
-                            <div className="text-green-400 font-bold mb-1">3. Effect</div>
-                            <div className="text-xs text-gray-500">物理現象</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-
-        // --- 4. Society (社会) ---
+        // --- 5. Society (社会) ---
         const PageSociety = () => (
             <div className="space-y-8 animate-fade-in">
                 <h2 className="text-3xl font-bold border-b border-gray-700 pb-4 mb-8 flex items-center">
-                    <span className="text-gold mr-4 text-2xl font-cinzel">03.</span>
+                    <span className="text-gold mr-4 text-2xl font-cinzel">05.</span>
                     現代魔法社会
                 </h2>
-                <p className="text-gray-400">
-                    ※ このセクションは現在執筆中です。魔鉱石によるエネルギー革命や、デバイスの普及率についてのデータが公開される予定です。
-                </p>
+                <p className="text-gray-400 italic">コンテンツ作成中...</p>
             </div>
         );
 
-        // --- 5. Glossary (用語集) ---
+        // --- 6. Glossary (用語集) ---
         const PageGlossary = () => (
             <div className="space-y-8 animate-fade-in">
                 <h2 className="text-3xl font-bold border-b border-gray-700 pb-4 mb-8 flex items-center">
@@ -244,13 +520,13 @@
                     <div className="bg-[#1e293b] p-4 rounded border-l-4 border-purple-500">
                         <dt className="font-bold text-white text-lg mb-1">デバイス (Device)</dt>
                         <dd className="text-gray-400 text-sm">
-                            魔法発動補助装置。術式の記録、演算、詠唱の代行を行う。一般的には杖や武器の形状をしている。
+                            魔法発動補助装置。術式の記録、演算、詠唱の代行を行う。アズライト式とグラート式で形状の傾向が異なる。
                         </dd>
                     </div>
                     <div className="bg-[#1e293b] p-4 rounded border-l-4 border-orange-500">
-                        <dt className="font-bold text-white text-lg mb-1">魔鉱石 (Magic Ore)</dt>
+                        <dt className="font-bold text-white text-lg mb-1">マノン鉱石 (Manon Ore)</dt>
                         <dd className="text-gray-400 text-sm">
-                            高圧下で魔素が結晶化した鉱石。強力なエネルギー源であり、都市インフラや高レベル魔法の触媒として利用される。
+                            高圧下でマノンが結晶化した鉱石。通称<strong>「魔石」</strong>。強力なエネルギー源であり、都市インフラや高レベル魔法の触媒として利用される。
                         </dd>
                     </div>
                 </dl>
@@ -258,13 +534,14 @@
         );
 
         // ========================================================================
-        //  メインアプリケーション (レイアウト & ルーティング)
+        //  メインアプリケーション
         // ========================================================================
 
         const MENU_ITEMS = [
             { id: 'intro', label: 'Introduction', sub: 'はじめに', icon: 'fa-book-open' },
+            { id: 'world', label: 'World View', sub: '世界観設定', icon: 'fa-globe-asia' },
             { id: 'history', label: 'History', sub: '魔法史概論', icon: 'fa-hourglass-half' },
-            { id: 'physics', label: 'Physics', sub: '魔素物理学', icon: 'fa-atom' },
+            { id: 'physics', label: 'Engineering', sub: '魔法工学', icon: 'fa-atom' },
             { id: 'society', label: 'Society', sub: '現代魔法社会', icon: 'fa-city' },
             { id: 'glossary', label: 'Glossary', sub: '用語集', icon: 'fa-list' },
         ];
@@ -272,10 +549,10 @@
         const App = () => {
             const [activePage, setActivePage] = useState('intro');
 
-            // ページ切り替えロジック
             const renderContent = () => {
                 switch (activePage) {
                     case 'intro': return <PageIntroduction />;
+                    case 'world': return <PageWorld />;
                     case 'history': return <PageHistory />;
                     case 'physics': return <PagePhysics />;
                     case 'society': return <PageSociety />;
@@ -301,11 +578,9 @@
                                     className={`w-full text-left px-8 py-4 group transition-all duration-300 relative overflow-hidden ${activePage === item.id ? 'text-gold bg-white/5' : 'text-gray-400 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
-                                    {/* アクティブ時の左線 */}
                                     {activePage === item.id && (
                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-gold shadow-[0_0_10px_#fbbf24]"></div>
                                     )}
-
                                     <div className="flex items-center justify-between relative z-10">
                                         <div>
                                             <div className={`font-cinzel text-sm tracking-wider ${activePage === item.id ? 'font-bold' : ''}`}>
