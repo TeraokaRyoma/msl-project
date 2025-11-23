@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M.S.L. Developer Console</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind Config for Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // GitHub Dark / Light colors mapping
+                        bg: {
+                            body: 'var(--bg-body)',
+                            sidebar: 'var(--bg-sidebar)',
+                            code: 'var(--bg-code)',
+                        },
+                        border: {
+                            DEFAULT: 'var(--border-color)',
+                        },
+                        text: {
+                            main: 'var(--text-main)',
+                            muted: 'var(--text-muted)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --bg-body: #ffffff;
+            --bg-sidebar: #f6f8fa;
+            --bg-code: #f6f8fa;
+            --border-color: #d0d7de;
+            --text-main: #24292f;
+            --text-muted: #57606a;
+        }
+
+        :root.dark {
+            --bg-body: #050505;
+            --bg-sidebar: #0d1117;
+            --bg-code: #161b22;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'IBM Plex Sans JP', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Grid Background */
+        .bg-grid {
+            background-image: linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Animations */
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .animate-blink {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.2s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .animate-modal {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+
+        /* Utilities */
+        .border-theme {
+            border-color: var(--border-color);
+        }
+
+        .bg-sidebar-theme {
+            background-color: var(--bg-sidebar);
+        }
+
+        .bg-code-theme {
+            background-color: var(--bg-code);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ========================================================================
+        //  UI Components
+        // ========================================================================
+
+        const CodeBlock = ({ filename, lang, code }) => (
+            <div className="bg-code-theme border-theme border rounded-md overflow-hidden my-4 font-mono text-sm shadow-sm">
+                <div className="px-4 py-2 text-xs text-text-muted border-b border-theme flex justify-between items-center bg-sidebar-theme">
+                    <span>{filename || 'snippet'}</span>
+                    <span className="uppercase">{lang || 'MSL'}</span>
+                </div>
+                <div className="p-4 overflow-x-auto whitespace-pre text-text-main">
+                    {code}
+                </div>
+            </div>
+        );
+
+        const Alert = ({ type, title, children }) => {
+            const colors = type === 'danger' ? 'border-red-500 bg-red-500/10 text-red-600 dark:text-red-400' :
+                type === 'warning' ? 'border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' :
+                    'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-400';
+            return (
+                <div className={`border-l-4 p-4 my-4 ${colors} rounded-r`}>
+                    <div className="font-bold font-mono text-sm mb-1 flex items-center gap-2">
+                        <i className={`fas ${type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'}`}></i>
+                        {title}
+                    </div>
+                    <div className="text-sm opacity-90">{children}</div>
+                </div>
+            );
+        };
+
+        const SettingsModal = ({ isOpen, onClose, settings, updateSettings }) => {
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+                    <div
+                        className="bg-sidebar-theme border-theme border rounded-lg shadow-2xl w-full max-w-md p-6 animate-modal text-text-main"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-6 border-b border-theme pb-4">
+                            <h2 className="text-xl font-mono font-bold"><i className="fas fa-cog mr-2"></i>Settings</h2>
+                            <button onClick={onClose} className="text-text-muted hover:text-text-main">
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            {/* Theme Setting */}
+                            <div>
+                                <label className="block text-sm font-bold mb-2 font-mono">Theme</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {['light', 'dark', 'system'].map(mode => (
+                                        <button
+                                            key={mode}
+                                            onClick={() => updateSettings('theme', mode)}
+                                            className={`px-4 py-2 text-sm rounded border font-mono transition-colors capitalize
+                                                ${settings.theme === mode
+                                                    ? 'bg-blue-500 text-white border-blue-500'
+                                                    : 'bg-transparent border-theme text-text-muted hover:border-blue-500/50'}`}
+                                        >
+                                            {mode === 'system' ? <i className="fas fa-laptop mr-1"></i> :
+                                                mode === 'dark' ? <i className="fas fa-moon mr-1"></i> :
+                                                    <i className="fas fa-sun mr-1"></i>}
+                                            {mode}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Font Size Setting */}
+                            <div>
+                                <label className="block text-sm font-bold mb-2 font-mono">Font Size</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { id: 'sm', label: 'Small', size: '14px' },
+                                        { id: 'md', label: 'Medium', size: '16px' },
+                                        { id: 'lg', label: 'Large', size: '18px' }
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => updateSettings('fontSize', opt.id)}
+                                            className={`px-4 py-2 text-sm rounded border font-mono transition-colors
+                                                ${settings.fontSize === opt.id
+                                                    ? 'bg-green-600 text-white border-green-600'
+                                                    : 'bg-transparent border-theme text-text-muted hover:border-green-500/50'}`}
+                                        >
+                                            <span style={{ fontSize: opt.size }}>A</span> {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 text-center">
+                            <button
+                                onClick={onClose}
+                                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-mono text-sm font-bold w-full transition-colors"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ========================================================================
+        //  Contents
+        // ========================================================================
+
+        const PageDashboard = () => (
+            <div className="animate-slide-in space-y-6">
+                <div className="border-b border-theme pb-4">
+                    <h1 className="text-3xl font-mono font-bold text-text-main mb-2">Developer Dashboard</h1>
+                    <p className="text-text-muted text-sm font-mono">M.S.L. Kernel v4.2.0 // Connected</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-6 bg-sidebar-theme border border-theme rounded hover:border-blue-500/50 transition-colors group cursor-pointer">
+                        <h3 className="text-blue-500 font-mono font-bold mb-2 group-hover:text-blue-400">
+                            <i className="fas fa-book mr-2"></i>Core Specifications
+                        </h3>
+                        <p className="text-sm text-text-muted">
+                            物理操作変数、リソース管理モデル、およびM.S.L.の基本構文に関する技術仕様書。
+                        </p>
+                    </div>
+                    <div className="p-6 bg-sidebar-theme border border-theme rounded hover:border-green-500/50 transition-colors group cursor-pointer">
+                        <h3 className="text-green-500 font-mono font-bold mb-2 group-hover:text-green-400">
+                            <i className="fas fa-code mr-2"></i>API Reference
+                        </h3>
+                        <p className="text-sm text-text-muted">
+                            Standard.Libを含む標準ライブラリ、およびデバイスOS固有のAPIリファレンス。
+                        </p>
+                    </div>
+                </div>
+
+                <Alert type="info" title="SYSTEM NOTICE">
+                    現在、ベルカ式OS (Kernel v3.x) との互換性検証が行われています。<br />
+                    カートリッジ制御関数を使用する際は、必ず最新の安全規定(Safety Protocols)を参照してください。
+                </Alert>
+            </div>
+        );
+
+        const PageSyntax = () => (
+            <div className="animate-slide-in space-y-6">
+                <h1 className="text-2xl font-mono font-bold text-text-main border-b border-theme pb-2">
+                    <span className="text-blue-500 mr-2">#</span>Core Syntax
+                </h1>
+                <p className="text-text-muted">
+                    M.S.L.における物理現象の定義は、以下の3要素の組み合わせによって決定されます。
+                </p>
+                <CodeBlock filename="syntax_example.msl" code={`// 基本構文パターン
+Process.Type(Target, Mode, Parameters...);
+
+// 実例: 熱量操作
+Process.Thermal(
+    material,       // Target (対象)
+    Mode.Heat,      // Process (作用)
+    Temp = 1200     // Parameter (変数)
+);`} />
+                <p className="text-sm text-text-muted font-mono">※ 詳細なドキュメントは準備中です...</p>
+            </div>
+        );
+
+        // ========================================================================
+        //  Main App
+        // ========================================================================
+
+        const NAV_TREE = [
+            { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-line' },
+            {
+                category: 'Core Specs',
+                items: [
+                    { id: 'syntax', label: 'Syntax & Grammar' },
+                    { id: 'physics', label: 'Physics Model' },
+                    { id: 'resource', label: 'Resource Mgmt' }
+                ]
+            },
+            {
+                category: 'API Reference',
+                items: [
+                    { id: 'lib_std', label: 'Standard.Lib' },
+                    { id: 'lib_os', label: 'Device OS API' },
+                ]
+            },
+            {
+                category: 'Protocols',
+                items: [
+                    { id: 'safety', label: 'Safety Guidelines' },
+                    { id: 'legacy', label: 'Legacy Support' }
+                ]
+            }
+        ];
+
+        const App = () => {
+            const [activePage, setActivePage] = useState('dashboard');
+            const [currentTime, setCurrentTime] = useState('');
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+            // Settings State with Persistence
+            const [settings, setSettings] = useState(() => {
+                const saved = localStorage.getItem('msl_dev_settings');
+                return saved ? JSON.parse(saved) : { theme: 'dark', fontSize: 'md' };
+            });
+
+            // Clock
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    const now = new Date();
+                    setCurrentTime(now.toISOString().split('T')[0] + ' ' + now.toLocaleTimeString('en-US', { hour12: false }));
+                }, 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            // Apply Theme
+            useEffect(() => {
+                const root = document.documentElement;
+                const applyDark = () => root.classList.add('dark');
+                const removeDark = () => root.classList.remove('dark');
+
+                if (settings.theme === 'dark') {
+                    applyDark();
+                } else if (settings.theme === 'light') {
+                    removeDark();
+                } else {
+                    // System
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyDark();
+                    else removeDark();
+                }
+                localStorage.setItem('msl_dev_settings', JSON.stringify(settings));
+            }, [settings.theme]);
+
+            // Apply Font Size
+            useEffect(() => {
+                const root = document.documentElement;
+                // Base size is 16px (1rem). Adjusting percentage scales everything using rem.
+                const sizes = { sm: '87.5%', md: '100%', lg: '112.5%' };
+                root.style.fontSize = sizes[settings.fontSize];
+                localStorage.setItem('msl_dev_settings', JSON.stringify(settings));
+            }, [settings.fontSize]);
+
+            const updateSettings = (key, value) => {
+                setSettings(prev => ({ ...prev, [key]: value }));
+            };
+
+            const renderContent = () => {
+                switch (activePage) {
+                    case 'dashboard': return <PageDashboard />;
+                    case 'syntax': return <PageSyntax />;
+                    default: return <div className="animate-slide-in h-full flex flex-col items-center justify-center text-text-muted opacity-50">
+                        <i className="fas fa-cogs text-6xl mb-4"></i>
+                        <h2 className="text-xl font-mono">{activePage.toUpperCase()}</h2>
+                        <p className="text-xs font-mono mt-2">UNDER CONSTRUCTION</p>
+                    </div>;
+                }
+            };
+
+            return (
+                <div className="flex h-screen w-full bg-grid text-text-main transition-colors duration-300">
+
+                    {/* Sidebar */}
+                    <nav className="w-64 bg-sidebar-theme border-r border-theme flex flex-col z-20 transition-colors duration-300">
+                        <div className="p-4 border-b border-theme flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-500/20 border border-blue-500 rounded flex items-center justify-center">
+                                <i className="fas fa-cube text-blue-500 text-sm"></i>
+                            </div>
+                            <div>
+                                <div className="font-mono font-bold text-text-main text-sm tracking-tight">M.S.L. DOCS</div>
+                                <div className="text-[10px] text-text-muted font-mono">AUTH: LEVEL 4</div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto py-4">
+                            {NAV_TREE.map((section, idx) => (
+                                <div key={idx} className="mb-4">
+                                    {section.category && (
+                                        <div className="px-4 mb-1 text-[10px] font-bold text-text-muted uppercase tracking-wider font-mono">
+                                            {section.category}
+                                        </div>
+                                    )}
+
+                                    {(section.items || [section]).map(item => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => item.items ? null : setActivePage(item.id)}
+                                            className={`w-full text-left px-4 py-1.5 text-xs font-mono border-l-2 transition-colors ${activePage === item.id
+                                                    ? 'border-blue-500 bg-blue-500/10 text-blue-500'
+                                                    : 'border-transparent text-text-muted hover:text-text-main hover:bg-black/5 dark:hover:bg-white/5'
+                                                }`}
+                                        >
+                                            {section.items ? item.label : (
+                                                <span className="flex items-center gap-2">
+                                                    <i className={`fas ${section.icon} w-4 text-center`}></i>
+                                                    {section.label}
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Footer / Settings */}
+                        <div className="border-t border-theme">
+                            <button
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="w-full p-3 text-xs text-text-muted font-mono hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
+                            >
+                                <i className="fas fa-cog"></i> SETTINGS
+                            </button>
+                            <a href="../index.html" className="block p-3 text-xs text-text-muted font-mono hover:bg-red-500/10 hover:text-red-500 transition-colors flex items-center gap-2">
+                                <i className="fas fa-sign-out-alt"></i> LOGOUT
+                            </a>
+                        </div>
+                    </nav>
+
+                    {/* Main Area */}
+                    <main className="flex-1 flex flex-col min-w-0 bg-transparent backdrop-blur-sm">
+
+                        {/* Header */}
+                        <header className="h-12 border-b border-theme bg-sidebar-theme/80 flex items-center justify-between px-6 sticky top-0 z-10 transition-colors duration-300">
+                            <div className="flex items-center text-xs font-mono text-text-muted">
+                                <span className="text-blue-500">root</span>
+                                <span className="mx-2">/</span>
+                                <span>docs</span>
+                                <span className="mx-2">/</span>
+                                <span className="text-text-main">{activePage}</span>
+                                <span className="ml-2 w-2 h-4 bg-blue-500 animate-blink inline-block align-middle"></span>
+                            </div>
+
+                            <div className="flex items-center gap-4 text-[10px] font-mono text-text-muted">
+                                <span className="hidden md:inline">{currentTime}</span>
+                                <span className="flex items-center gap-1 text-green-500">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                    ONLINE
+                                </span>
+                            </div>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-8">
+                            <div className="max-w-4xl mx-auto">
+                                {renderContent()}
+                            </div>
+                        </div>
+                    </main>
+
+                    <SettingsModal
+                        isOpen={isSettingsOpen}
+                        onClose={() => setIsSettingsOpen(false)}
+                        settings={settings}
+                        updateSettings={updateSettings}
+                    />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
