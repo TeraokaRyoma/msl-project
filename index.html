@@ -29,8 +29,10 @@
             color: white;
             margin: 0;
             font-family: 'IBM Plex Sans JP', sans-serif;
-            overflow: hidden;
-            /* アニメーション中のスクロール防止 */
+            overflow-x: hidden;
+            /* 横スクロール防止 */
+            overflow-y: auto;
+            /* 縦スクロール許可 */
         }
 
         /* フォント定義クラス */
@@ -59,7 +61,7 @@
             animation: pulse-bg 8s ease-in-out infinite;
         }
 
-        /* --- 起動シーケンスアニメーション (通常版) --- */
+        /* --- 起動シーケンスアニメーション --- */
 
         /* 1. ロゴ: 中央に出現 → 待機 → 上へ移動 */
         @keyframes logoSequence {
@@ -74,9 +76,9 @@
                 /* 中央付近で停止 */
             }
 
-            60% {
+            65% {
+                /* 待機時間を延長 */
                 transform: translateY(15vh) scale(1.1);
-                /* 待機 */
             }
 
             100% {
@@ -87,7 +89,7 @@
         }
 
         .anim-logo-wrapper {
-            /* 4.5s -> 2.5s に短縮 */
+            /* 2.5秒で完了 (テンポアップ版) */
             animation: logoSequence 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
@@ -97,26 +99,29 @@
                 opacity: 0;
                 transform: translateY(15px);
                 pointer-events: none;
+                /* 出現前はクリック不可 */
             }
 
             to {
                 opacity: 1;
                 transform: translateY(0);
                 pointer-events: auto;
+                /* 出現後にクリック有効 */
             }
         }
 
         .anim-content-wrapper {
             opacity: 0;
             pointer-events: none;
-            /* 開始タイミング: 4.0s -> 2.2s に短縮 */
+            /* 初期状態でもクリック不可 */
+            /* 開始タイミング: 2.2s (ロゴ移動完了に合わせて) */
             animation: contentFadeIn 0.8s ease-out 2.2s forwards;
         }
 
-        /* 3. フッター */
+        /* 3. フッター: 最後にひっそりと表示 */
         .anim-footer {
             opacity: 0;
-            /* 開始タイミング: 5.0s -> 2.8s に短縮 */
+            /* 開始タイミング: 2.8s */
             animation: contentFadeIn 0.8s ease-out 2.8s forwards;
         }
 
@@ -162,7 +167,6 @@
             };
 
             // アニメーション用クラスの決定
-            // 訪問済みなら 'skip-animation' を付与してアニメーションを無効化
             const logoClass = isVisited ? 'skip-animation' : 'anim-logo-wrapper';
             const contentClass = isVisited ? 'skip-animation' : 'anim-content-wrapper';
             const footerClass = isVisited ? 'skip-animation' : 'anim-footer';
@@ -176,16 +180,18 @@
                     </div>
 
                     {/* --- 1. ロゴセクション --- */}
-                    <div className={`text-center mb-16 z-10 ${logoClass}`}>
-                        <h1 className="text-6xl md:text-8xl font-logo mb-2 text-white opacity-90 tracking-[0.1rem]"
+                    <div className={`text-center mb-8 md:mb-16 z-10 ${logoClass} w-full`}>
+                        {/* メインロゴ: レスポンシブ対応 (4xl -> 6xl -> 8xl) */}
+                        <h1 className="text-4xl sm:text-6xl md:text-8xl font-logo mb-2 text-white opacity-90 tracking-[0.1rem]"
                             style={{ textShadow: '0 0 30px rgba(59, 130, 246, 0.3)' }}>
                             M.S.L.
                         </h1>
 
+                        {/* サブタイトル */}
                         <div className="flex flex-col items-center gap-1">
-                            <div className="h-px w-32 bg-blue-500/50 mb-2"></div>
-                            <p className="text-blue-400 text-sm md:text-base font-tech tracking-[0.3em] uppercase font-bold">
-                                Multiphase Synchronous Logic
+                            <div className="h-px w-16 md:w-32 bg-blue-500/50 mb-2"></div>
+                            <p className="text-blue-400 text-xs sm:text-sm md:text-base font-tech tracking-[0.3em] uppercase font-bold">
+                                Manon Structural Logic
                             </p>
                             <p className="text-gray-500 text-[10px] font-tech tracking-widest">
                                 SYSTEM VER. 1.0.0 // READY
@@ -194,7 +200,7 @@
                     </div>
 
                     {/* --- 2. ナビゲーションセクション --- */}
-                    <div className={`flex flex-col md:flex-row gap-6 w-full max-w-4xl z-10 ${contentClass}`}>
+                    <div className={`flex flex-col md:flex-row gap-4 md:gap-6 w-full max-w-md md:max-w-4xl z-10 ${contentClass}`}>
 
                         {/* ① Public Archive ボタン */}
                         <button
@@ -203,7 +209,8 @@
                                 flex-1 
                                 border border-yellow-600/30 
                                 bg-yellow-900/10
-                                p-8 rounded-lg 
+                                p-6 md:p-8 
+                                rounded-lg 
                                 text-left 
                                 hover:bg-yellow-900/20 
                                 hover:border-yellow-600/80
@@ -213,14 +220,14 @@
                                 backdrop-blur-sm
                             "
                         >
-                            <div className="text-yellow-600 font-tech text-xs mb-2 tracking-widest group-hover:text-yellow-400 transition-colors">
+                            <div className="text-yellow-600 font-tech text-[10px] md:text-xs mb-2 tracking-widest group-hover:text-yellow-400 transition-colors">
                                 LAYER: WORLD
                             </div>
-                            <h2 className="text-2xl font-bold mb-3 text-yellow-100 group-hover:text-white group-hover:translate-x-1 transition-all">
+                            <h2 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-yellow-100 group-hover:text-white group-hover:translate-x-1 transition-all">
                                 一般公開アーカイブ
                             </h2>
                             <p className="text-gray-400 text-xs md:text-sm leading-relaxed group-hover:text-yellow-200/80 font-medium">
-                                魔法史、魔素物理学、社会情勢に関する<br />
+                                魔法史、魔素物理学、社会情勢に関する<br className="hidden md:inline" />
                                 一般市民向け資料データベース。
                             </p>
                         </button>
@@ -232,7 +239,8 @@
                                 flex-1 
                                 border border-blue-600/30 
                                 bg-blue-900/10
-                                p-8 rounded-lg 
+                                p-6 md:p-8 
+                                rounded-lg 
                                 text-left 
                                 hover:bg-blue-900/20 
                                 hover:border-blue-500/80
@@ -242,14 +250,14 @@
                                 backdrop-blur-sm
                             "
                         >
-                            <div className="text-blue-600 font-tech text-xs mb-2 tracking-widest group-hover:text-blue-400 transition-colors">
+                            <div className="text-blue-600 font-tech text-[10px] md:text-xs mb-2 tracking-widest group-hover:text-blue-400 transition-colors">
                                 LAYER: DEV
                             </div>
-                            <h2 className="text-2xl font-bold mb-3 text-blue-100 group-hover:text-white group-hover:translate-x-1 transition-all">
+                            <h2 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-blue-100 group-hover:text-white group-hover:translate-x-1 transition-all">
                                 有資格者エリア
                             </h2>
                             <p className="text-gray-400 text-xs md:text-sm leading-relaxed group-hover:text-blue-200/80 font-medium">
-                                M.S.L.仕様書、APIリファレンス、<br />
+                                M.S.L.仕様書、APIリファレンス、<br className="hidden md:inline" />
                                 カートリッジ安全運用規定。
                             </p>
                         </button>
@@ -257,9 +265,10 @@
                     </div>
 
                     {/* --- 3. フッター --- */}
-                    <footer className={`fixed bottom-4 text-gray-600 text-[10px] font-tech tracking-wider flex gap-4 z-10 ${footerClass}`}>
+                    {/* レスポンシブ対応: absoluteから変更し、縦並びに対応 */}
+                    <footer className={`absolute bottom-4 text-gray-600 text-[10px] font-tech tracking-wider flex flex-col md:flex-row items-center gap-2 md:gap-4 z-10 ${footerClass} w-full justify-center`}>
                         <span>© 2025 Magic Development Bureau</span>
-                        <span className="text-gray-700">::</span>
+                        <span className="hidden md:inline text-gray-700">::</span>
                         <span>SECURE CONNECTION ESTABLISHED</span>
                     </footer>
 
