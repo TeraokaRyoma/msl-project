@@ -1,0 +1,82 @@
+{
+    "language": {
+        "keywords": [
+            "Define",
+            "Magic",
+            "import",
+            "var",
+            "const",
+            "if",
+            "else",
+            "loop",
+            "while",
+            "return",
+            "Wait",
+            "true",
+            "false"
+        ],
+        "types": [
+            "Target",
+            "Vector3",
+            "Material",
+            "int",
+            "float",
+            "bool",
+            "string",
+            "void"
+        ],
+        "builtins": [
+            "Sensor",
+            "Shape",
+            "Vector",
+            "Process",
+            "Device",
+            "Resonance",
+            "Will",
+            "Element",
+            "Standard",
+            "Lib"
+        ]
+    },
+    "theme": {
+        "rules": [
+            {
+                "token": "keyword",
+                "foreground": "ff7b72"
+            },
+            {
+                "token": "type",
+                "foreground": "79c0ff"
+            },
+            {
+                "token": "type.identifier",
+                "foreground": "d2a8ff"
+            },
+            {
+                "token": "function",
+                "foreground": "d2a8ff"
+            },
+            {
+                "token": "string",
+                "foreground": "a5d6ff"
+            },
+            {
+                "token": "number",
+                "foreground": "79c0ff"
+            },
+            {
+                "token": "comment",
+                "foreground": "8b949e",
+                "fontStyle": "italic"
+            }
+        ],
+        "colors": {
+            "editor.background": "#0d1117",
+            "editor.foreground": "#c9d1d9",
+            "editor.lineHighlightBackground": "#161b22",
+            "editorCursor.foreground": "#58a6ff",
+            "editor.selectionBackground": "#1f2428"
+        }
+    },
+    "initialCode": "// M.S.L. v1.0 - Mission: Clear the Targets\nimport Aegis.Standard.Lib;\n\nDefine Magic \"AutoChaser\" () {\n    // 1. 索敵 (Sensor)\n    // 周囲の敵性反応をスキャンしてロックオン\n    Sensor.Scan(Type.Hostile);\n\n    // 2. 攻撃ループ (Loop)\n    // ターゲット3体 × 耐久度(2発) = 最低6発必要\n    // 余裕を持って9回繰り返す\n    loop (9) {\n        \n        // A. 生成 (Material)\n        // 火属性マノンを生成\n        var mat = Material.Create(Element.Fire, Temp=1200);\n\n        // B. 形成 (Shape)\n        // 矢の形状を適用\n        var arrow = Shape.Apply(mat, Shape.Arrow);\n\n        // C. 実行 (Vector)\n        // ロックオン対象に射出\n        Vector.Shoot(arrow, Speed=60);\n        \n        // 次弾装填 (0.2秒待機)\n        Wait(0.2);\n    }\n}"
+}

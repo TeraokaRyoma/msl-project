@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Studio 3D Environment</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        bg: {
+                            main: '#050505',
+                            panel: '#0d1117',
+                            header: '#161b22'
+                        },
+                        border: {
+                            default: '#30363d',
+                            active: '#3b82f6'
+                        },
+                        accent: {
+                            blue: '#3b82f6',
+                            green: '#238636',
+                            red: '#da3633'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'monospace'],
+                        sans: ['IBM Plex Sans JP', 'sans-serif'],
+                        tech: ['Quantico', 'sans-serif']
+                    },
+                    cursor: {
+                        'col-resize': 'col-resize',
+                        'row-resize': 'row-resize',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Import Map for ESM Modules -->
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.3.1",
+                "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+                "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+                "three": "https://esm.sh/three@0.164.1",
+                "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.16.6?external=react,react-dom,three",
+                "@react-three/drei": "https://esm.sh/@react-three/drei@9.105.6?external=react,react-dom,three,@react-three/fiber",
+                "@monaco-editor/react": "https://esm.sh/@monaco-editor/react@4.6.0?external=react,react-dom",
+                "uuid": "https://esm.sh/uuid@9.0.1"
+            }
+        }
+    </script>
+
+    <!-- Babel -->
+    <script type="module" src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Quantico:wght@700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: #c9d1d9;
+            overflow: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #58a6ff;
+        }
+
+        .bg-grid-pattern {
+            background-image: linear-gradient(#30363d 1px, transparent 1px), linear-gradient(90deg, #30363d 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center;
+        }
+
+        /* Resizer Styles */
+        .resizer-vertical {
+            width: 4px;
+            background: #30363d;
+            cursor: col-resize;
+            transition: background 0.2s;
+            z-index: 10;
+        }
+
+        .resizer-vertical:hover,
+        .resizer-vertical:active {
+            background: #3b82f6;
+        }
+
+        .resizer-horizontal {
+            height: 4px;
+            background: #30363d;
+            cursor: row-resize;
+            transition: background 0.2s;
+            z-index: 10;
+        }
+
+        .resizer-horizontal:hover,
+        .resizer-horizontal:active {
+            background: #3b82f6;
+        }
+
+        /* Magic Circle Animation */
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-rotate {
+            animation: rotate 20s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root" class="h-screen w-screen flex"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import Editor, { loader } from '@monaco-editor/react';
+        import * as THREE from 'three';
+        import { Canvas, useFrame } from '@react-three/fiber';
+        import { OrbitControls, Text, Grid, PerspectiveCamera, Stars } from '@react-three/drei';
+        import { v4 as uuidv4 } from 'uuid';
+
+        // ========================================================================
+        //  GAME CONFIGURATION (Externalizable Settings)
+        //  挙動やバランスに関する設定をここに集約
+        // ========================================================================
+        const GAME_CONFIG = {
+            // リソース設定
+            INITIAL_MP: 1000,
+            BASE_COOLDOWN: 0.5,
+
+            // 物理挙動設定
+            PROJECTILE_SPEED_SCALE: 0.05, // 弾速係数 (小さいほど遅い)
+            HIT_DISTANCE: 1.5,            // 命中判定距離
+            TARGET_OFFSET: { x: 0, y: 1.0, z: 0 }, // ターゲットの中心位置補正
+
+            // 初期配置
+            INITIAL_TARGETS: [
+                { id: 1, position: new THREE.Vector3(-4, 0, -10), hp: 100 },
+                { id: 2, position: new THREE.Vector3(0, 0, -15), hp: 100 },
+                { id: 3, position: new THREE.Vector3(4, 0, -10), hp: 100 },
+            ],
+
+            // 色設定
+            COLORS: {
+                FIRE: "#ffaa00",
+                ICE: "#00ffff",
+                LIGHTNING: "#ffff00",
+                VOID: "#aa00ff",
+                TARGET_SAFE: "#44ff44",
+                TARGET_DANGER: "#ff4444",
+                PLAYER: "#eab308"
+            }
+        };
+
+        // --- M.S.L. Language Definition ---
+        const setupMonaco = async (monaco) => {
+            const languages = monaco.languages.getLanguages();
+            if (!languages.some(l => l.id === 'msl')) {
+                monaco.languages.register({ id: 'msl' });
+            }
+
+            const config = {
+                "keywords": ["Define", "Magic", "import", "var", "const", "if", "else", "loop", "while", "return", "Wait", "true", "false"],
+                "types": ["Target", "Vector3", "Material", "int", "float", "bool", "string", "void"],
+                "builtins": ["Sensor", "Shape", "Vector", "Process", "Device", "Resonance", "Will", "Element", "Standard", "Lib"]
+            };
+            const keywordsRegex = new RegExp(`\\b(${config.keywords.join('|')})\\b`);
+            const typesRegex = new RegExp(`\\b(${config.types.join('|')})\\b`);
+            const builtinsRegex = new RegExp(`\\b(${config.builtins.join('|')})\\b`);
+
+            monaco.languages.setMonarchTokensProvider('msl', {
+                tokenizer: {
+                    root: [
+                        [keywordsRegex, 'keyword'],
+                        [typesRegex, 'type'],
+                        [builtinsRegex, 'type.identifier'],
+                        [/[a-zA-Z_]\w*(?=\()/, 'function'],
+                        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+                        [/\d+/, 'number'],
+                        [/"([^"\\]|\\.)*$/, 'string.invalid'],
+                        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+                        [/\/\/.*$/, 'comment'],
+                        [/\/\*/, 'comment', '@comment'],
+                    ],
+                    string: [
+                        [/[^\\"]+/, 'string'],
+                        [/\\./, 'string.escape.invalid'],
+                        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+                    ],
+                    comment: [
+                        [/[^\/*]+/, 'comment'],
+                        [/\*\//, 'comment', '@pop'],
+                        [/[\/*]/, 'comment']
+                    ]
+                }
+            });
+
+            monaco.editor.defineTheme('msl-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    { token: 'keyword', foreground: 'ff7b72' },
+                    { token: 'type', foreground: '79c0ff' },
+                    { token: 'type.identifier', foreground: 'd2a8ff' },
+                    { token: 'function', foreground: 'd2a8ff' },
+                    { token: 'string', foreground: 'a5d6ff' },
+                    { token: 'number', foreground: '79c0ff' },
+                    { token: 'comment', foreground: '8b949e', fontStyle: 'italic' },
+                ],
+                colors: {
+                    'editor.background': '#0d1117',
+                    'editor.foreground': '#c9d1d9',
+                    'editor.lineHighlightBackground': '#161b22',
+                    'editorCursor.foreground': '#58a6ff',
+                    'editor.selectionBackground': '#1f2428',
+                }
+            });
+        };
+
+        const INITIAL_CODE = `// M.S.L. v1.0 - Mission: Clear the Targets
+import Aegis.Standard.Lib;
+
+Define Magic "AutoChaser" () {
+    // 1. 索敵 (Sensor)
+    // 周囲の敵性反応をスキャンしてロックオン
+    Sensor.Scan(Type.Hostile);
+
+    // 2. 攻撃ループ (Loop)
+    // ターゲット3体 × 耐久度(2発) = 最低6発必要
+    // 余裕を持って9回繰り返す
+    loop (9) {
+        
+        // A. 生成 (Material)
+        // 火属性マノンを生成
+        var mat = Material.Create(Element.Fire, Temp=1200);
+
+        // B. 形成 (Shape)
+        // 矢の形状を適用
+        var arrow = Shape.Apply(mat, Shape.Arrow);
+
+        // C. 実行 (Vector)
+        // ロックオン対象に射出
+        Vector.Shoot(arrow, Speed=60);
+        
+        // 次弾装填 (0.2秒待機)
+        Wait(0.2);
+    }
+}`;
+
+        // --- Generators (Chant & Circle) ---
+        // 3. 標準ライブラリ定義 (A.E.G.I.S. Standard Library)
+        const STANDARD_LIBRARY = {
+            Elements: {
+                Fire: { id: 'Fire', name: '熱量励起', color: GAME_CONFIG.COLORS.FIRE },
+                Ice: { id: 'Ice', name: '絶対零度', color: GAME_CONFIG.COLORS.ICE },
+                Lightning: { id: 'Lightning', name: '雷電収束', color: GAME_CONFIG.COLORS.LIGHTNING },
+                Void: { id: 'Void', name: '虚空振動', color: GAME_CONFIG.COLORS.VOID },
+            },
+            Shapes: {
+                Arrow: { id: 'Arrow', name: 'アロー' },
+                Ball: { id: 'Ball', name: 'スフィア' },
+                Lance: { id: 'Lance', name: 'ランス' },
+            }
+        };
+
+        const generateChant = (code) => {
+            const parts = [];
+            Object.values(STANDARD_LIBRARY.Elements).forEach(el => {
+                if (code.includes(`Element.${el.id}`)) parts.push(el.name);
+            });
+            Object.values(STANDARD_LIBRARY.Shapes).forEach(sh => {
+                if (code.includes(`Shape.${sh.id}`)) parts.push(`形状、${sh.name}`);
+            });
+
+            if (code.includes("Vector.Shoot")) parts.push("射出(シュート)！");
+            if (code.includes("Vector.Lock")) parts.push("捕捉(ロック)！");
+
+            if (parts.length === 0) return "術式不完全...";
+            return parts.join("。") + (parts[parts.length - 1].endsWith("！") ? "" : "。");
+        };
+
+        const MagicCircle = ({ code, color = "#44aaff" }) => {
+            const rings = Array.from({ length: 3 }).map((_, i) => (
+                <circle key={i} cx="100" cy="100" r={30 + i * 20} fill="none" stroke={color} strokeWidth="2" strokeDasharray={`${10 + i * 5} 5`} className="animate-rotate" style={{ animationDuration: `${10 + i * 5}s`, animationDirection: i % 2 ? 'reverse' : 'normal' }} />
+            ));
+            return (
+                <svg viewBox="0 0 200 200" className="w-full h-full opacity-80">
+                    <defs>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                            <feMerge>
+                                <feMergeNode in="coloredBlur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <g filter="url(#glow)">
+                        {rings}
+                        <polygon points="100,20 180,180 20,180" fill="none" stroke={color} strokeWidth="1" opacity="0.5" />
+                        <polygon points="100,180 180,20 20,20" fill="none" stroke={color} strokeWidth="1" opacity="0.5" />
+                        <text x="100" y="105" textAnchor="middle" fill={color} fontSize="10" fontFamily="monospace" letterSpacing="2">M.S.L. SYSTEM</text>
+                    </g>
+                </svg>
+            );
+        };
+
+        // --- 3D Object Components ---
+
+        const Projectile = ({ position, targetPos, speed, color, onHit, isFrozen }) => {
+            const ref = useRef();
+            const velocity = useMemo(() => {
+                const dir = new THREE.Vector3();
+                if (targetPos) {
+                    dir.subVectors(targetPos, position).normalize();
+                } else {
+                    dir.set(0, 0, -1);
+                }
+                // 設定された係数を使用
+                return dir.multiplyScalar(speed * GAME_CONFIG.PROJECTILE_SPEED_SCALE);
+            }, [targetPos, position, speed]);
+
+            useFrame((state, delta) => {
+                if (ref.current && !isFrozen) {
+                    // 60FPS基準の移動量
+                    const moveVec = velocity.clone().multiplyScalar(delta * 60);
+
+                    // すり抜け判定
+                    if (targetPos) {
+                        const dist = ref.current.position.distanceTo(targetPos);
+                        // 判定距離も設定から参照
+                        if (dist < moveVec.length() + GAME_CONFIG.HIT_DISTANCE) {
+                            onHit();
+                            ref.current.position.copy(targetPos);
+                            return;
+                        }
+                    }
+
+                    ref.current.position.add(moveVec);
+                    if (ref.current.position.length() > 100) onHit(false);
+                }
+            });
+
+            return (
+                <mesh ref={ref} position={position}>
+                    <sphereGeometry args={[0.3]} />
+                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} toneMapped={false} />
+                    <pointLight color={color} intensity={3} distance={8} decay={2} />
+                </mesh>
+            );
+        };
+
+        const TargetDummy = ({ position, hp, maxHp, id }) => {
+            if (hp <= 0) return null;
+
+            return (
+                <group position={position}>
+                    {/* HP Bar & Text */}
+                    <group position={[0, 3.0, 0]}>
+                        {/* バー背景 */}
+                        <mesh position={[0, -0.4, 0]}>
+                            <planeGeometry args={[2.2, 0.3]} />
+                            <meshBasicMaterial color="#222" />
+                        </mesh>
+                        {/* HPバー */}
+                        <mesh position={[-(1 - hp / maxHp) * 1.0, -0.4, 0.01]} scale={[hp / maxHp, 1, 1]}>
+                            <planeGeometry args={[2, 0.2]} />
+                            <meshBasicMaterial color={hp < 30 ? GAME_CONFIG.COLORS.TARGET_DANGER : GAME_CONFIG.COLORS.TARGET_SAFE} />
+                        </mesh>
+                        {/* 数値表示 */}
+                        <Text
+                            position={[0, 0, 0]}
+                            fontSize={0.4}
+                            color="white"
+                            anchorX="center"
+                            anchorY="middle"
+                            outlineWidth={0.05}
+                            outlineColor="#000"
+                        >
+                            {hp}/{maxHp}
+                        </Text>
+                    </group>
+
+                    {/* ID Label */}
+                    <Text
+                        position={[0, 3.8, 0]}
+                        fontSize={0.3}
+                        color="#88ccff"
+                        anchorX="center"
+                        outlineWidth={0.02}
+                        outlineColor="#000"
+                    >
+                        TARGET-{id < 10 ? `0${id}` : id}
+                    </Text>
+
+                    {/* Body: 青いボックス */}
+                    <mesh position={[0, 1, 0]} castShadow>
+                        <boxGeometry args={[1, 2, 1]} />
+                        <meshStandardMaterial color="#3b82f6" emissive="#1d4ed8" emissiveIntensity={0.2} roughness={0.4} metalness={0.6} />
+                    </mesh>
+                    {/* Head */}
+                    <mesh position={[0, 2.2, 0]}>
+                        <sphereGeometry args={[0.4]} />
+                        <meshStandardMaterial color="#ef4444" wireframe />
+                    </mesh>
+                    {/* Base */}
+                    <mesh position={[0, 0.1, 0]}>
+                        <cylinderGeometry args={[0.8, 0.8, 0.2]} />
+                        <meshStandardMaterial color="#334155" />
+                    </mesh>
+                </group>
+            );
+        };
+
+        const PlayerCharacter = () => {
+            return (
+                <group position={[0, 1, 0]}>
+                    <mesh castShadow>
+                        <boxGeometry args={[1, 2, 1]} />
+                        <meshStandardMaterial color={GAME_CONFIG.COLORS.PLAYER} emissive="#a16207" emissiveIntensity={0.2} roughness={0.4} metalness={0.6} />
+                    </mesh>
+                    <mesh position={[0, 0, -0.6]} rotation={[Math.PI / 2, 0, 0]}>
+                        <coneGeometry args={[0.3, 0.5, 4]} />
+                        <meshStandardMaterial color="#fbbf24" />
+                    </mesh>
+                </group>
+            );
+        };
+
+        // --- Result Modal ---
+        const ResultModal = ({ time, code, onClose }) => {
+            const [spellName, setSpellName] = useState("My Spell");
+            const [description, setDescription] = useState("");
+            const chant = generateChant(code);
+            const circleColor = code.includes("Fire") ? GAME_CONFIG.COLORS.FIRE : code.includes("Ice") ? GAME_CONFIG.COLORS.ICE : "#44aaff";
+
+            const downloadFile = async (filename, content, fileTypeDesc) => {
+                try {
+                    if (window.showSaveFilePicker) {
+                        const extension = filename.split('.').pop();
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: filename,
+                            types: [{ description: fileTypeDesc, accept: { 'text/plain': ['.' + extension] } }],
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(content);
+                        await writable.close();
+                    } else {
+                        const element = document.createElement('a');
+                        const file = new Blob([content], { type: 'text/plain' });
+                        element.href = URL.createObjectURL(file);
+                        element.download = filename;
+                        document.body.appendChild(element);
+                        element.click();
+                        document.body.removeChild(element);
+                    }
+                } catch (err) {
+                    console.log("Save cancelled");
+                }
+            };
+
+            const getSpecContent = () => {
+                return `# ${spellName}\n\n## Description\n${description}\n\n## Chant\n"${chant}"\n\n## Spec\n- ID: MSL-${Math.random().toString(36).substring(2, 8).toUpperCase()}-V1\n- Time: ${time}s\n\n## Code\n\`\`\`msl\n${code}\n\`\`\``;
+            };
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md">
+                    <div className="bg-[#0d1117] border-2 border-accent-green rounded-lg p-8 max-w-2xl w-full shadow-[0_0_50px_rgba(35,134,54,0.3)] animate-[fadeIn_0.5s_ease-out] max-h-[90vh] overflow-y-auto">
+                        <div className="text-center mb-6">
+                            <div className="text-accent-green font-tech tracking-widest text-xl mb-2">GAME CLEAR</div>
+                            <div className="text-6xl font-mono font-bold text-white">{time}<span className="text-2xl ml-2 text-gray-500">s</span></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs text-gray-500 font-mono mb-1">SPELL NAME</label>
+                                    <input
+                                        type="text"
+                                        value={spellName}
+                                        onChange={(e) => setSpellName(e.target.value)}
+                                        className="w-full bg-black border border-[#30363d] rounded p-2 text-white font-mono focus:border-accent-blue outline-none"
+                                        placeholder="Enter spell name..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-500 font-mono mb-1">DESCRIPTION</label>
+                                    <textarea
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        className="w-full bg-black border border-[#30363d] rounded p-2 text-white font-mono focus:border-accent-blue outline-none h-24 resize-none"
+                                        placeholder="Enter description..."
+                                    />
+                                </div>
+                            </div>
+                            <div className="aspect-square bg-black rounded border border-[#30363d] relative overflow-hidden flex items-center justify-center p-4"><MagicCircle code={code} color={circleColor} /></div>
+                        </div>
+
+                        <div className="flex gap-4 justify-center">
+                            <button onClick={() => downloadFile(spellName.replace(/\s+/g, '_') + '.msl', code, 'M.S.L. Source Code')} className="px-4 py-3 bg-[#1f2428] hover:bg-[#24292e] border border-[#30363d] text-white rounded font-bold flex items-center gap-2 transition-colors text-xs">
+                                <i className="fas fa-file-code"></i> Save Code
+                            </button>
+                            <button onClick={() => downloadFile(spellName.replace(/\s+/g, '_') + '_spec.md', getSpecContent(), 'Markdown Spec')} className="px-4 py-3 bg-[#1f2428] hover:bg-[#24292e] border border-[#30363d] text-white rounded font-bold flex items-center gap-2 transition-colors text-xs">
+                                <i className="fas fa-book"></i> Export Spec
+                            </button>
+                            <button onClick={onClose} className="px-6 py-3 bg-accent-green hover:bg-[#2ea043] text-white rounded font-bold transition-colors text-xs">
+                                RETURN TO EDITOR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+        const App = () => {
+            const [code, setCode] = useState(INITIAL_CODE);
+            const [logs, setLogs] = useState([]);
+            // Refを使って最新の値を保持 (非同期ループ内参照用)
+            const [mp, setMp] = useState(GAME_CONFIG.INITIAL_MP);
+            const mpRef = useRef(GAME_CONFIG.INITIAL_MP);
+
+            const [maxMp, setMaxMp] = useState(GAME_CONFIG.INITIAL_MP);
+            const [load, setLoad] = useState(0);
+
+            // Targets (State + Ref)
+            const [targets, setTargets] = useState(GAME_CONFIG.INITIAL_TARGETS);
+            const targetsRef = useRef(GAME_CONFIG.INITIAL_TARGETS);
+
+            const [projectiles, setProjectiles] = useState([]);
+            const [isScanning, setIsScanning] = useState(false);
+
+            const [isClear, setIsClear] = useState(false);
+            const [clearTime, setClearTime] = useState(null);
+            const [startTime, setStartTime] = useState(null);
+            const isRunningRef = useRef(false); // ★実行状態管理フラグ
+
+            const [leftWidth, setLeftWidth] = useState(40);
+            const [consoleHeight, setConsoleHeight] = useState(30);
+            const containerRef = useRef(null);
+            const leftPaneRef = useRef(null);
+
+            const editorRef = useRef(null);
+            const consoleEndRef = useRef(null);
+
+            useEffect(() => {
+                consoleEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [logs]);
+
+            // Sync State to Ref
+            useEffect(() => { targetsRef.current = targets; }, [targets]);
+            useEffect(() => { mpRef.current = mp; }, [mp]);
+
+            // Clear Check
+            useEffect(() => {
+                if (startTime && !isClear) {
+                    const aliveCount = targets.filter(t => t.hp > 0).length;
+                    if (aliveCount === 0) {
+                        const time = ((Date.now() - startTime) / 1000).toFixed(2);
+                        setClearTime(time);
+                        setIsClear(true);
+                        // 修正: クリア時に実行フラグを下ろしてループを停止させる
+                        isRunningRef.current = false;
+                        addLog(`MISSION CLEAR! Time: ${time}s`, "success");
+                    }
+                }
+            }, [targets, startTime, isClear]);
+
+            const handleEditorDidMount = (editor, monaco) => {
+                editorRef.current = editor;
+                setupMonaco(monaco).then(() => monaco.editor.setTheme('msl-dark'));
+            };
+
+            const handleEditorChange = (value) => {
+                setCode(value);
+            };
+
+            const addLog = (msg, type = 'info') => {
+                setLogs(prev => [...prev, { id: uuidv4(), time: new Date().toLocaleTimeString(), msg, type }]);
+            };
+            const clearLogs = () => setLogs([]);
+
+            // Resizers
+            const startResizingX = useCallback((e) => { e.preventDefault(); const onMouseMove = (ev) => { if (containerRef.current) { const w = (ev.clientX / containerRef.current.clientWidth) * 100; if (w > 20 && w < 80) setLeftWidth(w); } }; const onMouseUp = () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); }; document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp); }, []);
+            const startResizingY = useCallback((e) => { e.preventDefault(); const onMouseMove = (ev) => { if (leftPaneRef.current) { const rect = leftPaneRef.current.getBoundingClientRect(); const h = ((rect.bottom - ev.clientY) / rect.height) * 100; if (h > 10 && h < 80) setConsoleHeight(h); } }; const onMouseUp = () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); }; document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp); }, []);
+
+            // リセット関数
+            const resetGameState = () => {
+                // ★修正: 強制停止シグナル
+                isRunningRef.current = false;
+
+                setProjectiles([]);
+                // ディープコピー的に再設定 (Vector3も新規作成)
+                const initialTargets = GAME_CONFIG.INITIAL_TARGETS.map(t => ({ ...t, position: t.position.clone() }));
+                setTargets(initialTargets);
+                targetsRef.current = initialTargets; // Refも即時更新
+
+                setMp(GAME_CONFIG.INITIAL_MP);
+                mpRef.current = GAME_CONFIG.INITIAL_MP; // Refも即時更新
+
+                setLoad(0);
+                setIsClear(false);
+                setStartTime(null);
+                setClearTime(null);
+                setIsScanning(false);
+            };
+
+            const handleRun = async () => {
+                // 実行中なら一旦停止してリセット
+                isRunningRef.current = false;
+
+                resetGameState();
+                clearLogs();
+                setStartTime(Date.now());
+
+                // ★修正: 実行開始シグナル
+                isRunningRef.current = true;
+
+                addLog("System: Initializing M.S.L. Compiler...", "sys");
+
+                const lines = code.split('\n');
+                let hasScan = false;
+                let loopCount = 0;
+                let waitTime = 500;
+                const hasShoot = code.includes("Vector.Shoot");
+
+                if (code.includes("Sensor.Scan")) {
+                    hasScan = true;
+                    addLog("Sensor: Active Scan initiated.", "success");
+                    setIsScanning(true);
+                    await new Promise(r => setTimeout(r, 600));
+                } else {
+                    setIsScanning(false);
+                    addLog("Warning: No sensor data. Targeting disabled.", "warn");
+                }
+
+                const loopMatch = code.match(/loop\s*\(\s*(\d+)\s*\)/);
+                if (loopMatch) {
+                    loopCount = parseInt(loopMatch[1]);
+                } else {
+                    if (hasShoot) loopCount = 1;
+                }
+
+                const waitMatch = code.match(/Wait\s*\(\s*([\d.]+)\s*\)/);
+                if (waitMatch) {
+                    const userWait = parseFloat(waitMatch[1]);
+                    const actualWait = Math.max(userWait, GAME_CONFIG.BASE_COOLDOWN);
+                    waitTime = actualWait * 1000;
+                    if (userWait < GAME_CONFIG.BASE_COOLDOWN) addLog(`Notice: Wait overridden by CD.`, "warn");
+                } else {
+                    waitTime = GAME_CONFIG.BASE_COOLDOWN * 1000;
+                }
+                if (code.includes("Wait(0.1)")) waitTime = 100;
+
+                let color = GAME_CONFIG.COLORS.FIRE;
+                if (code.includes("Ice")) color = GAME_CONFIG.COLORS.ICE;
+                if (code.includes("Lightning")) color = GAME_CONFIG.COLORS.LIGHTNING;
+                if (code.includes("Void")) color = GAME_CONFIG.COLORS.VOID;
+
+                let speed = 30;
+                const speedMatch = code.match(/Speed\s*=\s*(\d+)/);
+                if (speedMatch) speed = parseInt(speedMatch[1]);
+
+                if (hasShoot && loopCount > 0) {
+                    addLog(`Compiling: Speed:${speed}`, "info");
+                }
+
+                // 実行ループ
+                for (let i = 0; i < loopCount; i++) {
+                    // ★修正: 実行中断チェック (リセットされたらループを抜ける)
+                    if (!isRunningRef.current) {
+                        addLog("System: Execution Aborted.", "warn");
+                        break;
+                    }
+
+                    if (mpRef.current <= 0) {
+                        addLog("Error: Mana Depleted.", "error");
+                        break;
+                    }
+
+                    let targetPos = null;
+                    let targetId = null;
+
+                    if (hasScan) {
+                        const activeTargets = targetsRef.current.filter(t => t.hp > 0);
+                        if (activeTargets.length > 0) {
+                            const t = activeTargets[0];
+                            targetPos = new THREE.Vector3(
+                                t.position.x + GAME_CONFIG.TARGET_OFFSET.x,
+                                t.position.y + GAME_CONFIG.TARGET_OFFSET.y,
+                                t.position.z + GAME_CONFIG.TARGET_OFFSET.z
+                            );
+                            targetId = t.id;
+                            addLog(`Lock-on: Target-0${t.id}`, "info");
+                        }
+                    } else {
+                        if (hasShoot) addLog("Vector: Shooting blind (No target).", "warn");
+                    }
+
+                    if (hasShoot) {
+                        const pid = uuidv4();
+                        setProjectiles(prev => [...prev, {
+                            id: pid,
+                            position: new THREE.Vector3(0, 1.5, 0),
+                            targetPos: targetPos,
+                            targetId: targetId,
+                            speed: speed,
+                            color: color
+                        }]);
+                    }
+
+                    setMp(prev => Math.max(0, prev - 50));
+                    setLoad(prev => Math.min(100, prev + 10));
+
+                    await new Promise(r => setTimeout(r, waitTime));
+                }
+
+                // 完走時のみログを出す
+                if (isRunningRef.current) {
+                    if (loopCount > 0) {
+                        addLog("System: Sequence complete.", "sys");
+                    } else {
+                        addLog("System: No executable actions found.", "warn");
+                    }
+                    setIsScanning(false);
+                    // 処理終了後はフラグを下ろす
+                    isRunningRef.current = false;
+                }
+            };
+
+            const handleProjectileHit = (pId, tId) => {
+                setProjectiles(prev => prev.filter(p => p.id !== pId));
+                if (tId) {
+                    setTargets(prev => {
+                        const next = prev.map(t => t.id === tId ? { ...t, hp: Math.max(0, t.hp - 50) } : t);
+                        return next;
+                    });
+                    if (tId) addLog(`>> Hit! Target-${tId} damaged.`);
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-screen w-screen font-sans text-sm bg-bg-main text-gray-300">
+                    <header className="h-12 bg-bg-header border-b border-border-default flex items-center justify-between px-4 shrink-0 z-50 select-none">
+                        <div className="flex items-center gap-3">
+                            <div className="text-accent-blue font-tech font-bold tracking-widest text-lg">M-STUDIO</div>
+                            <div className="h-4 w-px bg-border-default mx-1"></div>
+                            <div className="text-xs text-gray-500 font-mono">PHASE 5: RESULT IMPL</div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-xs font-mono text-gray-400 bg-bg-main px-2 py-1 rounded border border-border-default">
+                                <i className="fas fa-server text-accent-green"></i>
+                                <span>Standard OS (Ver 1.0)</span>
+                            </div>
+                            <a href="../index.html" className="text-gray-400 hover:text-white transition-colors"><i className="fas fa-times"></i></a>
+                        </div>
+                    </header>
+
+                    <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
+                        <div ref={leftPaneRef} className="flex flex-col border-r border-border-default bg-bg-panel min-w-[200px]" style={{ width: `${leftWidth}%` }}>
+                            <div className="flex flex-col min-h-[100px]" style={{ height: `${100 - consoleHeight}%` }}>
+                                <div className="h-9 flex items-center justify-between px-3 border-b border-border-default bg-bg-header select-none">
+                                    <div className="flex items-center gap-2"><i className="fas fa-file-code text-accent-blue"></i><span className="font-mono text-xs font-bold">main.msl</span></div>
+                                    <div className="text-[10px] text-gray-500 font-mono">unsaved</div>
+                                </div>
+                                <div className="flex-1 relative overflow-hidden">
+                                    <Editor height="100%" defaultLanguage="msl" defaultValue={INITIAL_CODE} value={code} onChange={handleEditorChange} onMount={handleEditorDidMount} theme="msl-dark" options={{ minimap: { enabled: false }, fontSize: 13, fontFamily: "'JetBrains Mono', monospace", automaticLayout: true, padding: { top: 16, bottom: 16 } }} />
+                                </div>
+                            </div>
+                            <div className="resizer-horizontal w-full h-1 bg-border-default hover:bg-accent-blue cursor-row-resize z-20" onMouseDown={startResizingY}></div>
+                            <div className="flex flex-col bg-black min-h-[100px]" style={{ height: `${consoleHeight}%` }}>
+                                <div className="h-8 flex items-center justify-between px-3 border-b border-border-default bg-bg-header select-none">
+                                    <div className="flex items-center gap-4 text-xs font-bold text-gray-400"><span className="text-white border-b-2 border-accent-blue pb-[5px]">TERMINAL</span></div>
+                                    <button onClick={clearLogs} className="text-gray-500 hover:text-white"><i className="fas fa-trash"></i></button>
+                                </div>
+                                <div className="flex-1 p-2 font-mono text-xs overflow-y-auto space-y-1">
+                                    <div className="text-accent-blue">[SYSTEM] Ready.</div>
+                                    {logs.map(log => (<div key={log.id} className={`flex gap-2 ${log.type === 'error' ? 'text-accent-red' : log.type === 'warn' ? 'text-accent-yellow' : log.type === 'success' ? 'text-accent-green' : log.type === 'sys' ? 'text-accent-blue' : 'text-gray-300'}`}><span className="text-gray-600 shrink-0">[{log.time}]</span><span className="break-words">{log.msg}</span></div>))}
+                                    <div ref={consoleEndRef} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="resizer-vertical w-1 h-full bg-border-default hover:bg-accent-blue cursor-col-resize z-20" onMouseDown={startResizingX}></div>
+
+                        <div className="flex-1 flex flex-col bg-[#050505] relative min-w-[200px]">
+                            <div className="flex-1 relative" style={{ backgroundColor: '#202035' }}>
+                                <Canvas shadows camera={{ position: [0, 5, 10], fov: 50 }}>
+                                    <color attach="background" args={['#202035']} />
+                                    <fog attach="fog" args={['#202035', 20, 80]} />
+                                    <ambientLight intensity={0.8} />
+                                    <pointLight position={[10, 10, 10]} intensity={1} castShadow />
+                                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                                    <Grid infiniteGrid fadeDistance={50} cellColor="#1f2937" sectionColor="#3b82f6" sectionSize={5} cellSize={1} position={[0, -0.01, 0]} />
+                                    <PlayerCharacter />
+                                    {isScanning && <mesh position={[0, 1, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0, 20, 32]} /><meshBasicMaterial color="#00ffff" transparent opacity={0.1} side={THREE.DoubleSide} /></mesh>}
+                                    {targets.map(t => <TargetDummy key={t.id} {...t} maxHp={100} />)}
+                                    {projectiles.map(p => <Projectile key={p.id} {...p} isFrozen={isClear} onHit={(hit = true) => handleProjectileHit(p.id, hit ? p.targetId : null)} />)}
+                                    <OrbitControls />
+                                </Canvas>
+
+                                <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                                    <div className="bg-black/80 border border-border-default px-4 py-2 rounded text-xs font-mono shadow-lg w-48 pointer-events-none">
+                                        <div className="flex justify-between text-gray-400 text-[10px] mb-1"><span>MANA</span><span>{mp} / {maxMp}</span></div>
+                                        <div className="w-full h-2 bg-gray-800 rounded-full relative"><div className="h-full bg-accent-blue transition-all duration-500" style={{ width: `${(mp / maxMp) * 100}%` }}></div></div>
+                                    </div>
+                                    <div className="bg-black/80 border border-border-default px-4 py-2 rounded text-xs font-mono shadow-lg w-48 pointer-events-none">
+                                        <div className="flex justify-between text-gray-400 text-[10px] mb-1"><span>LOAD</span><span className={load > 80 ? 'text-accent-red' : 'text-gray-300'}>{load}%</span></div>
+                                        <div className="w-full h-2 bg-gray-800 rounded-full relative"><div className={`h-full transition-all duration-500 ${load > 80 ? 'bg-accent-red' : 'bg-accent-green'}`} style={{ width: `${load}%` }}></div></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="h-12 border-t border-border-default bg-bg-header flex items-center justify-between px-4">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 font-mono"><i className="fas fa-info-circle"></i><span>Camera: Orbit Control</span></div>
+                                <button onClick={handleRun} className="px-6 py-2 bg-accent-green hover:bg-[#2ea043] text-white font-bold rounded text-xs flex items-center gap-2 transition-colors shadow-lg shadow-green-900/20 active:scale-95 font-tech tracking-widest"><i className="fas fa-play"></i> COMPILE & RUN</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Result Modal */}
+                    {isClear && <ResultModal time={clearTime} code={code} onClose={resetGameState} />}
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

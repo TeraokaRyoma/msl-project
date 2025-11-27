@@ -8,7 +8,6 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tailwind Config -->
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -27,7 +26,6 @@
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- Fonts -->
@@ -116,6 +114,7 @@
             animation: slideIn 0.2s ease-out forwards;
         }
 
+        /* Syntax Highlighting */
         .token.keyword {
             color: #ff7b72;
         }
@@ -140,10 +139,6 @@
         .token.number {
             color: #79c0ff;
         }
-
-        .token.variable {
-            color: #ffa657;
-        }
     </style>
 </head>
 
@@ -156,15 +151,12 @@
         /* --- Components --- */
         const CodeBlock = ({ filename, lang, code }) => {
             const highlight = (input) => {
-                const regex = /(\/\/.*)|(\/\*[\s\S]*?\*\/)|("[^"]*")|\b(var|const|if|else|loop|while|return|import|Define|Magic|class|extends|override|new|this|true|false|int|float|string|bool|Vector3|Target|Material)\b|\b(\d+\.?\d*)\b|(\w+)(?=\()/g;
+                const regex = /(\/\/.*)|(\/\*[\s\S]*?\*\/)|("[^"]*")|\b(var|const|if|else|loop|while|return|import|Define|Magic|true|false|int|float|string|bool|Vector3|Target|Material)\b|\b(\d+\.?\d*)\b|(\w+)(?=\()/g;
                 return input.replace(regex, (match, cS, cM, str, kw, num, func) => {
                     if (cS) return `<span class="token comment">${cS}</span>`;
                     if (cM) return `<span class="token comment">${cM}</span>`;
                     if (str) return `<span class="token string">${str}</span>`;
-                    if (kw) {
-                        if (/^[A-Z]/.test(kw) || ['int', 'float', 'bool', 'string'].includes(kw)) return `<span class="token type">${kw}</span>`;
-                        return `<span class="token keyword">${kw}</span>`;
-                    }
+                    if (kw) { if (/^[A-Z]/.test(kw) || ['int', 'float', 'bool', 'string'].includes(kw)) return `<span class="token type">${kw}</span>`; return `<span class="token keyword">${kw}</span>`; }
                     if (num) return `<span class="token number">${num}</span>`;
                     if (func) return `<span class="token function">${func}</span>`;
                     return match;
@@ -172,45 +164,21 @@
             };
             return (
                 <div className="bg-code-theme border-theme border rounded-md overflow-hidden my-4 font-mono text-sm shadow-sm">
-                    <div className="px-4 py-2 text-xs text-text-muted border-b border-theme flex justify-between items-center bg-sidebar-theme">
-                        <span>{filename || 'snippet'}</span>
-                        <span className="uppercase">{lang || 'MSL'}</span>
-                    </div>
+                    <div className="px-4 py-2 text-xs text-text-muted border-b border-theme flex justify-between items-center bg-sidebar-theme"><span>{filename || 'snippet'}</span><span className="uppercase">{lang || 'MSL'}</span></div>
                     <div className="p-4 overflow-x-auto whitespace-pre text-text-main" dangerouslySetInnerHTML={{ __html: highlight(code) }} />
                 </div>
             );
         };
 
         const Alert = ({ type, title, children }) => {
-            const colors = type === 'danger' ? 'border-red-500 bg-red-500/10 text-red-600 dark:text-red-400' :
-                type === 'warning' ? 'border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' :
-                    'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-400';
-            return (
-                <div className={`border-l-4 p-4 my-4 ${colors} rounded-r`}>
-                    <div className="font-bold font-mono text-sm mb-1 flex items-center gap-2">
-                        <i className={`fas ${type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'}`}></i>
-                        {title}
-                    </div>
-                    <div className="text-sm opacity-90">{children}</div>
-                </div>
-            );
+            const colors = type === 'danger' ? 'border-red-500 bg-red-500/10 text-red-600 dark:text-red-400' : type === 'warning' ? 'border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' : 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-400';
+            return (<div className={`border-l-4 p-4 my-4 ${colors} rounded-r`}><div className="font-bold font-mono text-sm mb-1 flex items-center gap-2"><i className={`fas ${type === 'danger' ? 'fa-exclamation-triangle' : 'fa-info-circle'}`}></i>{title}</div><div className="text-sm opacity-90">{children}</div></div>);
         };
 
         const SettingsModal = ({ isOpen, onClose, settings, updateSettings }) => {
             if (!isOpen) return null;
             return (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-                    <div className="bg-sidebar-theme border-theme border rounded-lg shadow-2xl w-full max-w-md p-6 text-text-main" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-6 border-b border-theme pb-4">
-                            <h2 className="text-xl font-mono font-bold">Settings</h2>
-                            <button onClick={onClose}><i className="fas fa-times"></i></button>
-                        </div>
-                        <div className="space-y-6">
-                            <div><label className="block text-sm font-bold mb-2 font-mono">Theme</label><div className="grid grid-cols-3 gap-2">{['light', 'dark', 'system'].map(mode => (<button key={mode} onClick={() => updateSettings('theme', mode)} className={`px-4 py-2 text-sm rounded border font-mono capitalize ${settings.theme === mode ? 'bg-blue-500 text-white' : 'border-theme text-text-muted'}`}>{mode}</button>))}</div></div>
-                            <div><label className="block text-sm font-bold mb-2 font-mono">Font Size</label><div className="grid grid-cols-3 gap-2">{['sm', 'md', 'lg'].map(size => (<button key={size} onClick={() => updateSettings('fontSize', size)} className={`px-4 py-2 text-sm rounded border font-mono uppercase ${settings.fontSize === size ? 'bg-green-600 text-white' : 'border-theme text-text-muted'}`}>{size}</button>))}</div></div>
-                        </div>
-                    </div>
-                </div>
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}><div className="bg-sidebar-theme border-theme border rounded-lg shadow-2xl w-full max-w-md p-6 text-text-main" onClick={e => e.stopPropagation()}><div className="flex justify-between items-center mb-6 border-b border-theme pb-4"><h2 className="text-xl font-mono font-bold">Settings</h2><button onClick={onClose}><i className="fas fa-times"></i></button></div><div className="space-y-6"><div><label className="block text-sm font-bold mb-2 font-mono">Theme</label><div className="grid grid-cols-3 gap-2">{['light', 'dark', 'system'].map(mode => (<button key={mode} onClick={() => updateSettings('theme', mode)} className={`px-4 py-2 text-sm rounded border font-mono capitalize ${settings.theme === mode ? 'bg-blue-500 text-white' : 'border-theme text-text-muted'}`}>{mode}</button>))}</div></div><div><label className="block text-sm font-bold mb-2 font-mono">Font Size</label><div className="grid grid-cols-3 gap-2">{['sm', 'md', 'lg'].map(size => (<button key={size} onClick={() => updateSettings('fontSize', size)} className={`px-4 py-2 text-sm rounded border font-mono uppercase ${settings.fontSize === size ? 'bg-green-600 text-white' : 'border-theme text-text-muted'}`}>{size}</button>))}</div></div></div></div></div>
             );
         };
 
@@ -219,135 +187,31 @@
             <div className="animate-slide-in space-y-6">
                 <div className="border-b border-theme pb-4"><h1 className="text-2xl md:text-3xl font-mono font-bold text-text-main mb-2">Developer Dashboard</h1><p className="text-text-muted text-sm font-mono">M.S.L. Kernel v4.2.0 // Connected</p></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-6 bg-sidebar-theme border border-theme rounded hover:border-blue-500/50 transition-colors cursor-pointer"><h3 className="text-blue-500 font-mono font-bold mb-2"><i className="fas fa-book mr-2"></i>Core Specs</h3><p className="text-sm text-text-muted">言語の基本構文、データ型、物理操作変数の定義。</p></div>
-                    <div className="p-6 bg-sidebar-theme border border-theme rounded hover:border-green-500/50 transition-colors cursor-pointer"><h3 className="text-green-500 font-mono font-bold mb-2"><i className="fas fa-code mr-2"></i>API Ref</h3><p className="text-sm text-text-muted">標準ライブラリ(Standard.Lib)とサンプルコード。</p></div>
+                    <div className="p-6 bg-sidebar-theme border border-theme rounded hover:border-blue-500/50 transition-colors group cursor-pointer"><h3 className="text-blue-500 font-mono font-bold mb-2 group-hover:text-blue-400"><i className="fas fa-book mr-2"></i>Core Specs</h3><p className="text-sm text-text-muted">物理操作変数、リソース管理モデル、基本構文仕様。</p></div>
+                    <div className="p-6 bg-sidebar-theme border border-theme rounded hover:border-green-500/50 transition-colors group cursor-pointer"><h3 className="text-green-500 font-mono font-bold mb-2 group-hover:text-green-400"><i className="fas fa-code mr-2"></i>API Ref</h3><p className="text-sm text-text-muted">標準ライブラリ、デバイスOS固有APIリファレンス。</p></div>
                 </div>
                 <Alert type="info" title="SYSTEM NOTICE">現在、グラート式OS (Kernel v3.x) との互換性検証が行われています。</Alert>
             </div>
         );
 
         const PageSyntax = () => (
-            <div className="animate-slide-in space-y-8">
-                <h1 className="text-2xl font-mono font-bold text-text-main border-b border-theme pb-2 mb-4"><span className="text-blue-500 mr-2">#</span>Syntax & Grammar</h1>
-                <div><h3 className="text-lg font-bold text-text-main mb-2 font-mono">1. Data Types</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <ul className="list-disc list-inside text-sm text-text-muted space-y-1 font-mono bg-sidebar-theme p-4 rounded border border-theme">
-                            <li><strong className="text-text-main">int / float</strong>: 数値</li>
-                            <li><strong className="text-text-main">bool</strong>: 真偽値</li>
-                            <li><strong className="text-text-main">string</strong>: 文字列</li>
-                        </ul>
-                        <ul className="list-disc list-inside text-sm text-text-muted space-y-1 font-mono bg-sidebar-theme p-4 rounded border border-theme">
-                            <li><strong className="text-green-400">Vector3</strong>: 座標</li>
-                            <li><strong className="text-green-400">Target</strong>: 干渉対象</li>
-                            <li><strong className="text-green-400">Material</strong>: 物質</li>
-                        </ul>
-                    </div>
-                    <CodeBlock filename="types.msl" code={`int count = 5;\nTarget enemy = Sensor.ScanEnemy(Range=50.0);`} />
-                </div>
-                <div><h3 className="text-lg font-bold text-text-main mb-2 font-mono">2. Control Flow</h3>
-                    <CodeBlock filename="control.msl" code={`if (Device.Mp > 100) {\n    Process.Thermal(target, Mode.Heat);\n} else {\n    Print("Low Mana");\n}\n\nwhile (target.IsAlive) {\n    Process.Kinetic(bullet, Mode.Shoot, target);\n    if (Device.Mp <= 0) break; \n}`} />
-                </div>
+            <div className="animate-slide-in space-y-12">
+                <div><h1 className="text-2xl font-mono font-bold text-text-main border-b border-theme pb-2 mb-4"><span className="text-blue-500 mr-2">#</span>Syntax & Grammar</h1><p className="text-text-muted leading-relaxed mb-4">M.S.L. ver 1.0 における基本構文の定義。<br />物理干渉を安全に行うため、厳密な記法（Strong Typing）を採用しています。</p><Alert type="warning" title="Safety Limit">M.S.L.コンパイラは無限ループ等の論理エラーを自動検知しません。誤ったコードは<strong>MPの全損（気絶）</strong>を招きます。</Alert></div>
+                <div><h3 className="text-lg font-bold text-text-main mb-2 font-mono flex items-center gap-2"><span className="text-blue-500">1.</span> Variables & Constants</h3><p className="text-sm text-text-muted mb-2">値を保持するための識別子です。</p><CodeBlock filename="variables.msl" code={`var energy = 100;\nenergy = energy - 20;\n\nconst MAX_RANGE = 500;\n// MAX_RANGE = 600;  // -> Compiler Error`} /></div>
+                <div><h3 className="text-lg font-bold text-text-main mb-2 font-mono flex items-center gap-2"><span className="text-blue-500">2.</span> Data Types</h3><p className="text-sm text-text-muted mb-2">魔法演算に必要なプリミティブ型です。</p><div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><ul className="list-disc list-inside text-sm text-text-muted space-y-1 font-mono bg-sidebar-theme p-4 rounded border border-theme"><li><strong className="text-text-main">int / float</strong>: 数値</li><li><strong className="text-text-main">bool</strong>: 真偽値</li><li><strong className="text-text-main">string</strong>: 文字列</li></ul><ul className="list-disc list-inside text-sm text-text-muted space-y-1 font-mono bg-sidebar-theme p-4 rounded border border-theme"><li><strong className="text-blue-500">Vector3</strong>: 3次元ベクトル</li><li><strong className="text-blue-500">Target</strong>: 干渉対象</li><li><strong className="text-blue-500">Material</strong>: 物質データ</li></ul></div><Alert type="info" title="Object Acquisition"><code>Target</code>や<code>Material</code>は、<strong>Sensor (探知)</strong>や<strong>Database (検索)</strong>を通じて取得します。</Alert><CodeBlock filename="types.msl" code={`int count = 5;\nTarget enemy = Sensor.Scan(Type.Hostile).Nearest;\nMaterial iron = Database.LoadMaterial("Iron");`} /></div>
+                <div><h3 className="text-lg font-bold text-text-main mb-2 font-mono flex items-center gap-2"><span className="text-blue-500">3.</span> Control Flow</h3><p className="text-sm text-text-muted mb-2">維持型魔法には<code>Wait()</code>を含むループ処理が必要です。</p><CodeBlock filename="auto_shield.msl" code={`// 自動防御 (維持型)\nwhile (Device.Mp > 100) {\n    var threats = Sensor.Scan(Type.Projectile);\n    if (threats.Count > 0) {\n        Process.State(Shield, Mode.Deploy);\n    }\n    Wait(0.05); // 必須\n}`} /></div>
             </div>
         );
 
-        // 新規追加: Object Oriented 解説ページ
-        const PageOOP = () => (
-            <div className="animate-slide-in space-y-8">
-                <div>
-                    <h1 className="text-2xl font-mono font-bold text-text-main border-b border-theme pb-2 mb-4">
-                        <span className="text-purple-500 mr-2">#</span>Object Oriented Magic
-                    </h1>
-                    <p className="text-text-muted leading-relaxed">
-                        M.S.L.はクラスベースのオブジェクト指向プログラミングをサポートしています。<br />
-                        これにより、既存の術式を<strong>継承 (Inheritance)</strong> して改良したり、インターフェースによる規格化が可能です。
-                    </p>
-                </div>
-
-                <div>
-                    <h3 className="text-lg font-bold text-text-main mb-2 font-mono flex items-center gap-2">
-                        <span className="text-purple-500">1.</span> Class Definition
-                    </h3>
-                    <p className="text-sm text-text-muted mb-2">
-                        魔法は <code>class</code> として定義できます。<code>Define Magic</code> はこのクラス定義の糖衣構文（ショートカット）に過ぎません。
-                    </p>
-                    <CodeBlock filename="fireball_class.msl" code={`// 基本魔法クラス
-class FireBall {
-    // プロパティ（調整可能なパラメータ）
-    float Temperature = 1200;
-    float Speed = 50;
-
-    // コンストラクタ
-    FireBall(float temp) {
-        this.Temperature = temp;
-    }
-
-    // 発動メソッド
-    void Cast(Target target) {
-        var fire = Create(Material.Fire, Temp=this.Temperature);
-        Process.Kinetic(fire, Mode.Shoot, Target=target);
-    }
-}`} />
-                </div>
-
-                <div>
-                    <h3 className="text-lg font-bold text-text-main mb-2 font-mono flex items-center gap-2">
-                        <span className="text-purple-500">2.</span> Inheritance (継承)
-                    </h3>
-                    <p className="text-sm text-text-muted mb-2">
-                        <code>extends</code> キーワードを使用することで、既存の魔法の特性を引き継ぎつつ、新たな機能を付与した派生魔法を作成できます。
-                    </p>
-                    <CodeBlock filename="homing_fireball.msl" code={`// FireBallを継承した誘導弾
-class HomingFireBall extends FireBall {
-    
-    // メソッドのオーバーライド（上書き）
-    override void Cast(Target target) {
-        // 親クラスの処理で火の玉を生成
-        var fire = base.CreateFire(); 
-
-        // 誘導ロジックを追加
-        while (target.IsAlive) {
-            // ターゲットに向かってベクトルを修正し続ける
-            Process.Vector(fire, Mode.Homing, Target=target);
-            Wait(0.1);
-        }
-    }
-}`} />
-                    <Alert type="info" title="Benefits">
-                        クラス継承を活用することで、基礎的な物理演算コードを再記述する必要がなくなり、
-                        独自のアルゴリズム（誘導や分裂など）の実装に集中できます。
-                    </Alert>
-                </div>
-            </div>
-        );
-
-        const PagePlaceholder = ({ title }) => (
-            <div className="animate-slide-in h-full flex flex-col items-center justify-center text-text-muted opacity-50">
-                <i className="fas fa-cogs text-6xl mb-4"></i>
-                <h2 className="text-xl font-mono">{title}</h2>
-                <p className="text-xs font-mono mt-2">SPECIFICATION PENDING</p>
-            </div>
-        );
+        // 他のページコンポーネントはプレースホルダー
+        const PagePlaceholder = ({ title }) => (<div className="animate-slide-in h-full flex flex-col items-center justify-center text-text-muted opacity-50"><i className="fas fa-cogs text-6xl mb-4"></i><h2 className="text-xl font-mono">{title}</h2><p className="text-xs font-mono mt-2">SPECIFICATION PENDING</p></div>);
 
         /* --- Main App --- */
         const NAV_TREE = [
             { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-line' },
-            {
-                category: 'Language Specs',
-                items: [
-                    { id: 'syntax', label: 'Syntax & Grammar' },
-                    { id: 'oop', label: 'Object Oriented' }, // 新規追加
-                    { id: 'types', label: 'Data Types' },
-                    { id: 'control', label: 'Control Flow' }
-                ]
-            },
-            {
-                category: 'Core Physics',
-                items: [{ id: 'physics_vars', label: 'Operations' }]
-            },
-            {
-                category: 'Standard.Lib',
-                items: [{ id: 'lib_list', label: 'Function List' }]
-            }
+            { category: 'Language Specs', items: [{ id: 'syntax', label: 'Syntax & Grammar' }, { id: 'types', label: 'Data Types' }, { id: 'control', label: 'Control Flow' }] },
+            { category: 'Core Physics', items: [{ id: 'physics_vars', label: 'Operations' }] },
+            { category: 'Standard.Lib', items: [{ id: 'lib_list', label: 'Function List' }] }
         ];
 
         const App = () => {
@@ -373,7 +237,6 @@ class HomingFireBall extends FireBall {
                     case 'syntax':
                     case 'types':
                     case 'control': return <PageSyntax />;
-                    case 'oop': return <PageOOP />; // 新規追加
                     default: return <PagePlaceholder title={activePage.toUpperCase().replace('_', ' ')} />;
                 }
             };
@@ -384,11 +247,21 @@ class HomingFireBall extends FireBall {
                     <nav className={`fixed inset-y-0 left-0 w-64 bg-sidebar-theme border-r border-theme flex flex-col z-40 transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative`}>
                         <div className="p-4 border-b border-theme flex items-center gap-3 mt-12 md:mt-0"><div className="w-8 h-8 bg-blue-500/20 border border-blue-500 rounded flex items-center justify-center"><i className="fas fa-cube text-blue-500 text-sm"></i></div><div><div className="font-mono font-bold text-text-main text-sm">M.S.L. DOCS</div><div className="text-[10px] text-text-muted font-mono">AUTH: LEVEL 4</div></div></div>
                         <div className="flex-1 overflow-y-auto py-4">{NAV_TREE.map((section, idx) => (<div key={idx} className="mb-4">{section.category && <div className="px-4 mb-1 text-[10px] font-bold text-text-muted uppercase tracking-wider font-mono">{section.category}</div>}{(section.items || [section]).map(item => (<button key={item.id} onClick={() => { setActivePage(item.id); setIsMobileMenuOpen(false); }} className={`w-full text-left px-4 py-1.5 text-xs font-mono border-l-2 transition-colors ${activePage === item.id ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-transparent text-text-muted hover:bg-black/5 dark:hover:bg-white/5'}`}>{section.items ? item.label : <span className="flex items-center gap-2"><i className={`fas ${section.icon} w-4 text-center`}></i>{section.label}</span>}</button>))}</div>))}</div>
-                        <div className="border-t border-theme"><button onClick={() => setIsSettingsOpen(true)} className="w-full p-3 text-xs text-text-muted font-mono hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"><i className="fas fa-cog"></i> SETTINGS</button><a href="../index.html" className="block p-3 text-xs text-text-muted font-mono hover:bg-red-500/10 hover:text-red-500 flex items-center gap-2"><i className="fas fa-sign-out-alt"></i> LOGOUT</a></div>
+                        <div className="border-t border-theme">
+                            {/* Studio起動ボタンの追加 */}
+                            <a href="../studio/index.html" className="block p-3 text-xs font-bold text-green-500 bg-green-900/10 hover:bg-green-900/20 transition-colors flex items-center gap-2 border-b border-theme">
+                                <i className="fas fa-rocket"></i> OPEN M-STUDIO
+                            </a>
+                            <button onClick={() => setIsSettingsOpen(true)} className="w-full p-3 text-xs text-text-muted font-mono hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"><i className="fas fa-cog"></i> SETTINGS</button>
+                            <a href="../index.html" className="block p-3 text-xs text-text-muted font-mono hover:bg-red-500/10 hover:text-red-500 flex items-center gap-2"><i className="fas fa-sign-out-alt"></i> LOGOUT</a>
+                        </div>
                     </nav>
                     {isMobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>}
                     <main className="flex-1 flex flex-col min-w-0 bg-transparent backdrop-blur-sm pt-12 md:pt-0">
-                        <header className="hidden md:flex h-12 border-b border-theme bg-sidebar-theme/80 items-center justify-between px-6 sticky top-0 z-10"><div className="flex items-center text-xs font-mono text-text-muted"><span className="text-blue-500">root</span><span className="mx-2">/</span><span>docs</span><span className="mx-2">/</span><span className="text-text-main">{activePage}</span></div><div className="flex items-center gap-2 text-[10px] font-mono text-green-500"><span className="w-2 h-2 rounded-full bg-green-500"></span>ONLINE</div></header>
+                        <header className="hidden md:flex h-12 border-b border-theme bg-sidebar-theme/80 items-center justify-between px-6 sticky top-0 z-10">
+                            <div className="flex items-center text-xs font-mono text-text-muted"><span className="text-blue-500">root</span><span className="mx-2">/</span><span>docs</span><span className="mx-2">/</span><span className="text-text-main">{activePage}</span></div>
+                            <div className="flex items-center gap-2 text-[10px] font-mono text-green-500"><span className="w-2 h-2 rounded-full bg-green-500"></span>ONLINE</div>
+                        </header>
                         <div className="flex-1 overflow-y-auto p-4 md:p-8"><div className="max-w-4xl mx-auto">{renderContent()}</div></div>
                     </main>
                     <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} updateSettings={updateSettings} />

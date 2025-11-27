@@ -30,12 +30,9 @@
             margin: 0;
             font-family: 'IBM Plex Sans JP', sans-serif;
             overflow-x: hidden;
-            /* 横スクロール防止 */
             overflow-y: auto;
-            /* 縦スクロール許可 */
         }
 
-        /* フォント定義クラス */
         .font-logo {
             font-family: 'Black Ops One', system-ui;
         }
@@ -44,7 +41,14 @@
             font-family: 'Quantico', sans-serif;
         }
 
-        /* 背景のアニメーション（ゆっくり明滅） */
+        .font-world {
+            font-family: 'Shippori Mincho', serif;
+        }
+
+        .font-dev {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
         @keyframes pulse-bg {
 
             0%,
@@ -61,9 +65,7 @@
             animation: pulse-bg 8s ease-in-out infinite;
         }
 
-        /* --- 起動シーケンスアニメーション --- */
-
-        /* 1. ロゴ: 中央に出現 → 待機 → 上へ移動 */
+        /* アニメーション定義 */
         @keyframes logoSequence {
             0% {
                 opacity: 0;
@@ -73,59 +75,47 @@
             20% {
                 opacity: 1;
                 transform: translateY(15vh) scale(1.1);
-                /* 中央付近で停止 */
             }
 
             65% {
-                /* 待機時間を延長 */
                 transform: translateY(15vh) scale(1.1);
             }
 
             100% {
                 opacity: 1;
                 transform: translateY(0) scale(1);
-                /* 定位置へ移動 */
             }
         }
 
         .anim-logo-wrapper {
-            /* 2.5秒で完了 (テンポアップ版) */
             animation: logoSequence 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* 2. コンテンツ: ロゴ移動後にフェードイン */
         @keyframes contentFadeIn {
             from {
                 opacity: 0;
                 transform: translateY(15px);
                 pointer-events: none;
-                /* 出現前はクリック不可 */
             }
 
             to {
                 opacity: 1;
                 transform: translateY(0);
                 pointer-events: auto;
-                /* 出現後にクリック有効 */
             }
         }
 
         .anim-content-wrapper {
             opacity: 0;
             pointer-events: none;
-            /* 初期状態でもクリック不可 */
-            /* 開始タイミング: 2.2s (ロゴ移動完了に合わせて) */
             animation: contentFadeIn 0.8s ease-out 2.2s forwards;
         }
 
-        /* 3. フッター: 最後にひっそりと表示 */
         .anim-footer {
             opacity: 0;
-            /* 開始タイミング: 2.8s */
             animation: contentFadeIn 0.8s ease-out 2.8s forwards;
         }
 
-        /* --- スキップ用スタイル (即時表示) --- */
         .skip-animation {
             opacity: 1 !important;
             transform: translateY(0) !important;
@@ -144,29 +134,19 @@
         const App = () => {
             const [isVisited, setIsVisited] = useState(false);
 
-            // 初回ロード時に訪問済みかチェック
             useEffect(() => {
                 const visited = sessionStorage.getItem('msl_portal_visited');
-                if (visited) {
-                    setIsVisited(true);
-                } else {
-                    // 初回訪問ならフラグを立てる
-                    sessionStorage.setItem('msl_portal_visited', 'true');
-                }
+                if (visited) setIsVisited(true);
+                else sessionStorage.setItem('msl_portal_visited', 'true');
             }, []);
 
-            // 画面遷移ハンドラ
             const handleNavigate = (target) => {
-                if (target === 'world') {
-                    window.location.href = './public/index.html';
-                } else if (target === 'dev') {
-                    window.location.href = './dev/index.html';
-                } else {
-                    console.log(`Navigating to: ${target}`);
-                }
+                if (target === 'world') window.location.href = './public/index.html';
+                else if (target === 'dev') window.location.href = './dev/index.html';
+                else if (target === 'studio') window.location.href = './studio/index.html';
+                else console.log(`Navigating to: ${target}`);
             };
 
-            // アニメーション用クラスの決定
             const logoClass = isVisited ? 'skip-animation' : 'anim-logo-wrapper';
             const contentClass = isVisited ? 'skip-animation' : 'anim-content-wrapper';
             const footerClass = isVisited ? 'skip-animation' : 'anim-footer';
@@ -174,20 +154,16 @@
             return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-4 relative">
 
-                    {/* 背景装飾 */}
                     <div className="absolute inset-0 pointer-events-none animate-bg"
                         style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)' }}>
                     </div>
 
-                    {/* --- 1. ロゴセクション --- */}
-                    <div className={`text-center mb-8 md:mb-16 z-10 ${logoClass} w-full`}>
-                        {/* メインロゴ: レスポンシブ対応 (4xl -> 6xl -> 8xl) */}
+                    {/* Logo Section */}
+                    <div className={`text-center mb-8 md:mb-12 z-10 ${logoClass} w-full`}>
                         <h1 className="text-4xl sm:text-6xl md:text-8xl font-logo mb-2 text-white opacity-90 tracking-[0.1rem]"
                             style={{ textShadow: '0 0 30px rgba(59, 130, 246, 0.3)' }}>
                             M.S.L.
                         </h1>
-
-                        {/* サブタイトル */}
                         <div className="flex flex-col items-center gap-1">
                             <div className="h-px w-16 md:w-32 bg-blue-500/50 mb-2"></div>
                             <p className="text-blue-400 text-xs sm:text-sm md:text-base font-tech tracking-[0.3em] uppercase font-bold">
@@ -199,79 +175,58 @@
                         </div>
                     </div>
 
-                    {/* --- 2. ナビゲーションセクション --- */}
-                    <div className={`flex flex-col md:flex-row gap-4 md:gap-6 w-full max-w-md md:max-w-4xl z-10 ${contentClass}`}>
+                    {/* Navigation Section */}
+                    <div className={`flex flex-col gap-6 w-full max-w-md md:max-w-4xl z-10 ${contentClass}`}>
 
-                        {/* ① Public Archive ボタン */}
+                        {/* Main Action: Launch Studio */}
                         <button
-                            onClick={() => handleNavigate('world')}
+                            onClick={() => handleNavigate('studio')}
                             className="
-                                flex-1 
-                                border border-yellow-600/30 
-                                bg-yellow-900/10
-                                p-6 md:p-8 
-                                rounded-lg 
-                                text-left 
-                                hover:bg-yellow-900/20 
-                                hover:border-yellow-600/80
-                                active:bg-yellow-900/40
-                                transition-all duration-300
-                                group
-                                backdrop-blur-sm
+                                w-full border-2 border-green-500/50 bg-green-900/20
+                                p-6 md:p-8 rounded-xl text-center
+                                hover:bg-green-900/40 hover:border-green-400 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(34,197,94,0.2)]
+                                active:scale-[0.98] transition-all duration-300 group backdrop-blur-md
                             "
                         >
-                            <div className="text-yellow-600 font-tech text-[10px] md:text-xs mb-2 tracking-widest group-hover:text-yellow-400 transition-colors">
-                                LAYER: WORLD
+                            <div className="text-green-400 font-tech text-sm md:text-base mb-2 tracking-[0.2em] group-hover:text-green-300">
+                                <i className="fas fa-rocket mr-2"></i>EXECUTION ENVIRONMENT
                             </div>
-                            <h2 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-yellow-100 group-hover:text-white group-hover:translate-x-1 transition-all">
-                                一般公開アーカイブ
+                            <h2 className="text-2xl md:text-4xl font-bold text-white font-logo tracking-wider group-hover:text-green-100">
+                                LAUNCH M-STUDIO
                             </h2>
-                            <p className="text-gray-400 text-xs md:text-sm leading-relaxed group-hover:text-yellow-200/80 font-medium">
-                                魔法史、魔素物理学、社会情勢に関する<br className="hidden md:inline" />
-                                一般市民向け資料データベース。
+                            <p className="text-gray-400 text-xs md:text-sm mt-2 font-mono group-hover:text-gray-300">
+                                3D魔法開発・実行シミュレーターを起動
                             </p>
                         </button>
 
-                        {/* ② Authorized Access ボタン */}
-                        <button
-                            onClick={() => handleNavigate('dev')}
-                            className="
-                                flex-1 
-                                border border-blue-600/30 
-                                bg-blue-900/10
-                                p-6 md:p-8 
-                                rounded-lg 
-                                text-left 
-                                hover:bg-blue-900/20 
-                                hover:border-blue-500/80
-                                active:bg-blue-900/40
-                                transition-all duration-300
-                                group
-                                backdrop-blur-sm
-                            "
-                        >
-                            <div className="text-blue-600 font-tech text-[10px] md:text-xs mb-2 tracking-widest group-hover:text-blue-400 transition-colors">
-                                LAYER: DEV
-                            </div>
-                            <h2 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-blue-100 group-hover:text-white group-hover:translate-x-1 transition-all">
-                                有資格者エリア
-                            </h2>
-                            <p className="text-gray-400 text-xs md:text-sm leading-relaxed group-hover:text-blue-200/80 font-medium">
-                                M.S.L.仕様書、APIリファレンス、<br className="hidden md:inline" />
-                                カートリッジ安全運用規定。
-                            </p>
-                        </button>
+                        {/* Sub Actions: Archives */}
+                        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                            <button
+                                onClick={() => handleNavigate('world')}
+                                className="flex-1 border border-yellow-600/30 bg-yellow-900/10 p-6 rounded-lg text-left hover:bg-yellow-900/20 hover:border-yellow-600/80 active:bg-yellow-900/40 transition-all duration-300 group backdrop-blur-sm"
+                            >
+                                <div className="text-yellow-600 font-tech text-[10px] md:text-xs mb-2 tracking-widest group-hover:text-yellow-400">LAYER: WORLD</div>
+                                <h2 className="text-xl font-bold mb-2 text-yellow-100 group-hover:text-white">一般公開アーカイブ</h2>
+                                <p className="text-gray-400 text-xs font-medium leading-relaxed group-hover:text-yellow-200/80">魔法史、魔素物理学、社会情勢に関する資料。</p>
+                            </button>
+
+                            <button
+                                onClick={() => handleNavigate('dev')}
+                                className="flex-1 border border-blue-600/30 bg-blue-900/10 p-6 rounded-lg text-left hover:bg-blue-900/20 hover:border-blue-500/80 active:bg-blue-900/40 transition-all duration-300 group backdrop-blur-sm"
+                            >
+                                <div className="text-blue-600 font-tech text-[10px] md:text-xs mb-2 tracking-widest group-hover:text-blue-400">LAYER: DEV</div>
+                                <h2 className="text-xl font-bold font-dev mb-2 text-blue-100 group-hover:text-white">有資格者エリア</h2>
+                                <p className="text-gray-400 text-xs font-medium leading-relaxed group-hover:text-blue-200/80">M.S.L.仕様書、APIリファレンス、安全規定。</p>
+                            </button>
+                        </div>
 
                     </div>
 
-                    {/* --- 3. フッター --- */}
-                    {/* レスポンシブ対応: absoluteから変更し、縦並びに対応 */}
                     <footer className={`absolute bottom-4 text-gray-600 text-[10px] font-tech tracking-wider flex flex-col md:flex-row items-center gap-2 md:gap-4 z-10 ${footerClass} w-full justify-center`}>
                         <span>© 2025 Magic Development Bureau</span>
                         <span className="hidden md:inline text-gray-700">::</span>
                         <span>SECURE CONNECTION ESTABLISHED</span>
                     </footer>
-
                 </div>
             );
         };
